@@ -7,9 +7,13 @@ import {
   type NodeChange,
   type NodeMouseHandler,
 } from "@xyflow/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import type { EngineeringFlowGraph } from "../../types/engineeringFlow";
+import {
+  LIFECYCLE_STATUSES,
+  type LifecycleStatus,
+} from "../../types/eflowCommand";
 import { toReactFlowEdges, toReactFlowNodes } from "../../lib/graphAdapters";
 import { EngineeringNodeCard } from "./EngineeringNodeCard";
 
@@ -54,6 +58,27 @@ const canvasFilters: Array<{ id: CanvasFilter; label: string }> = [
   { id: "needs_review", label: "Needs Review" },
 ];
 
+type LifecycleCanvasFilter = "all" | LifecycleStatus;
+
+const lifecycleFilterLabels: Record<LifecycleStatus, string> = {
+  draft: "Draft",
+  planned: "Planned",
+  ready: "Ready",
+  developing: "Developing",
+  completed: "Completed",
+  blocked: "Blocked",
+  needs_refactor: "Needs refactor",
+  deprecated: "Deprecated",
+};
+
+const lifecycleFilters: Array<{ id: LifecycleCanvasFilter; label: string }> = [
+  { id: "all", label: "All" },
+  ...LIFECYCLE_STATUSES.map((status) => ({
+    id: status,
+    label: lifecycleFilterLabels[status],
+  })),
+];
+
 export function EngineeringFlowCanvas({
   graph,
   selectedNodeId,
@@ -64,25 +89,33 @@ export function EngineeringFlowCanvas({
   onNodePositionChange,
 }: EngineeringFlowCanvasProps) {
   const [activeFilter, setActiveFilter] = useState<CanvasFilter>("all");
+  const [activeLifecycleFilter, setActiveLifecycleFilter] =
+    useState<LifecycleCanvasFilter>("all");
+
+  const lifecycleCounts = useMemo(() => {
+    const counts = Object.fromEntries(
+      LIFECYCLE_STATUSES.map((status) => [status, 0]),
+    ) as Record<LifecycleStatus, number>;
+
+    graph?.nodes.forEach((node) => {
+      counts[getDisplayedLifecycleStatus(node)] += 1;
+    });
+
+    return counts;
+  }, [graph]);
 
   const filteredDomainNodes = useMemo(() => {
     if (!graph) return [];
 
     return graph.nodes.filter((node) => {
-      if (activeFilter === "all") return true;
-      if (activeFilter === "intent") return node.type === "intent";
-      if (activeFilter === "users") return node.type === "user";
-      if (activeFilter === "screens") return node.type === "screen";
-      if (activeFilter === "features") return node.type === "feature";
-      if (activeFilter === "flow") return node.type === "flow_step";
-      if (activeFilter === "data") return node.type === "data_object";
-      if (activeFilter === "ai") return node.type === "ai_task";
-      if (activeFilter === "questions") return node.type === "question";
-      if (activeFilter === "confirmed") return node.status === "confirmed";
-      if (activeFilter === "needs_review") return node.status === "needs_review";
-      return true;
+      const matchesGraphFilter = matchesCanvasFilter(node, activeFilter);
+      const matchesLifecycleFilter =
+        activeLifecycleFilter === "all" ||
+        getDisplayedLifecycleStatus(node) === activeLifecycleFilter;
+
+      return matchesGraphFilter && matchesLifecycleFilter;
     });
-  }, [activeFilter, graph]);
+  }, [activeFilter, activeLifecycleFilter, graph]);
 
   const visibleNodeIds = useMemo(
     () => new Set(filteredDomainNodes.map((node) => node.id)),
@@ -100,6 +133,28 @@ export function EngineeringFlowCanvas({
       ),
     };
   }, [filteredDomainNodes, graph, visibleNodeIds]);
+
+  useEffect(() => {
+    if (!filteredGraph) return;
+
+    if (selectedNodeId && !visibleNodeIds.has(selectedNodeId)) {
+      onClearSelection();
+      return;
+    }
+
+    if (
+      selectedEdgeId &&
+      !filteredGraph.edges.some((edge) => edge.id === selectedEdgeId)
+    ) {
+      onClearSelection();
+    }
+  }, [
+    filteredGraph,
+    onClearSelection,
+    selectedEdgeId,
+    selectedNodeId,
+    visibleNodeIds,
+  ]);
 
   if (!graph) {
     return (
@@ -154,17 +209,44 @@ export function EngineeringFlowCanvas({
             {graph.edges.length} edges
           </span>
         </div>
-        <div className="canvas-filter-row" aria-label="Canvas filters">
-          {canvasFilters.map((filter) => (
-            <button
-              className={`filter-chip ${activeFilter === filter.id ? "is-active" : ""}`}
-              key={filter.id}
-              type="button"
-              onClick={() => setActiveFilter(filter.id)}
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div className="canvas-filter-stack" aria-label="Canvas filters">
+          <div className="canvas-filter-group">
+            <span className="canvas-filter-label">Graph</span>
+            <div className="canvas-filter-row" aria-label="Graph filters">
+              {canvasFilters.map((filter) => (
+                <button
+                  className={`filter-chip ${activeFilter === filter.id ? "is-active" : ""}`}
+                  key={filter.id}
+                  data-graph-filter={filter.id}
+                  type="button"
+                  onClick={() => setActiveFilter(filter.id)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="canvas-filter-group">
+            <span className="canvas-filter-label">Lifecycle</span>
+            <div className="canvas-filter-row" aria-label="Lifecycle filters">
+              {lifecycleFilters.map((filter) => (
+                <button
+                  className={`filter-chip ${activeLifecycleFilter === filter.id ? "is-active" : ""}`}
+                  key={filter.id}
+                  data-lifecycle-filter={filter.id}
+                  type="button"
+                  onClick={() => setActiveLifecycleFilter(filter.id)}
+                >
+                  <span>{filter.label}</span>
+                  <span className="filter-chip-count">
+                    {filter.id === "all"
+                      ? graph.nodes.length
+                      : lifecycleCounts[filter.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="react-flow-shell">
           <ReactFlow
@@ -186,4 +268,28 @@ export function EngineeringFlowCanvas({
       </div>
     </ReactFlowProvider>
   );
+}
+
+function matchesCanvasFilter(
+  node: EngineeringFlowGraph["nodes"][number],
+  activeFilter: CanvasFilter,
+): boolean {
+  if (activeFilter === "all") return true;
+  if (activeFilter === "intent") return node.type === "intent";
+  if (activeFilter === "users") return node.type === "user";
+  if (activeFilter === "screens") return node.type === "screen";
+  if (activeFilter === "features") return node.type === "feature";
+  if (activeFilter === "flow") return node.type === "flow_step";
+  if (activeFilter === "data") return node.type === "data_object";
+  if (activeFilter === "ai") return node.type === "ai_task";
+  if (activeFilter === "questions") return node.type === "question";
+  if (activeFilter === "confirmed") return node.status === "confirmed";
+  if (activeFilter === "needs_review") return node.status === "needs_review";
+  return true;
+}
+
+function getDisplayedLifecycleStatus(
+  node: EngineeringFlowGraph["nodes"][number],
+): LifecycleStatus {
+  return node.lifecycleStatus ?? "planned";
 }

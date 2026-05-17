@@ -991,3 +991,64 @@ Recommended next milestone:
 > Lifecycle Canvas Filters
 
 Keep filters small and optional; this should not become a full canvas redesign.
+
+## Completed Checkpoint: Lifecycle Canvas Filters
+
+This checkpoint adds small display-only lifecycle filters to the existing canvas filter area without changing graph generation, command import behavior, audit behavior, persistence behavior, edge lifecycle UI, or canvas editing capabilities.
+
+Files changed:
+
+- `src/components/graph/EngineeringFlowCanvas.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added a compact `Lifecycle` filter row next to the existing canvas graph filter chips.
+- Lifecycle filtering is single-select with `All`, `Draft`, `Planned`, `Ready`, `Developing`, `Completed`, `Blocked`, `Needs refactor`, and `Deprecated`.
+- Default lifecycle filter state is `All`, preserving the previous default canvas view.
+- Missing node `lifecycleStatus` values are treated as `planned` for filtering and counts without writing `planned` back into graph data.
+- Visible nodes are derived by applying the existing graph filter and the new lifecycle filter together.
+- Edges continue to render only when both source and target nodes are visible, so filtered views do not show dangling edges.
+- Lifecycle chips show small node counts derived from current graph state.
+- If the currently selected node or edge becomes hidden by filters, the canvas clears the selection through the existing selection path.
+- Filter state remains local UI state and is not persisted to workspace JSON.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Confirmed Todo Thought Universe example generation shows lifecycle filter controls.
+- Confirmed default filter state is `All` and shows all nodes.
+- Confirmed generated nodes with missing `lifecycleStatus` count and display as `Planned`.
+- Confirmed filtering to `Planned` keeps planned nodes visible.
+- Confirmed changing a node to `Completed` in NodeInspector updates lifecycle counts and hides it from the `Planned` filter.
+- Confirmed filtering to `Completed` shows the completed node and no dangling edges.
+- Confirmed filtering away from `Completed` hides that node safely.
+- Confirmed Local Command Import apply updates a node lifecycle state and the lifecycle filter view reflects it.
+- Confirmed manual node creation defaults to `Planned` and appears under the `Planned` filter.
+- Confirmed browser refresh restores the graph and leaves lifecycle filters safe, with filter state reset to default `All`.
+- Confirmed Canvas Node Lifecycle Badges still appear.
+- Confirmed Lifecycle Progress Summary still works.
+- Confirmed Audit Log panel still exists.
+- Confirmed Add Manual Node UI and Add Manual Edge UI still work.
+- Confirmed no edge lifecycle badges were added.
+- Confirmed no edge lifecycle filters were added.
+- Confirmed no canvas direct editing or drag-to-create behavior was added.
+
+Known limitations:
+
+- Edge lifecycle filters are not implemented.
+- Edge lifecycle badges are not implemented.
+- Canvas direct editing is not implemented.
+- Drag-to-create is not implemented.
+- Filter state is not persisted.
+
+Recommended next milestone:
+
+> Workspace / Import / Audit Hardening

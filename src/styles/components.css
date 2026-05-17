@@ -348,14 +348,38 @@
   white-space: nowrap;
 }
 
-.canvas-filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
+.canvas-filter-stack {
+  display: grid;
+  gap: 8px;
   padding: 0 6px;
 }
 
+.canvas-filter-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.canvas-filter-label {
+  flex: 0 0 68px;
+  padding-top: 7px;
+  color: var(--muted-soft);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.canvas-filter-row {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
 .filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: 30px;
   padding: 5px 10px;
   border: 1px solid var(--line);
@@ -371,6 +395,25 @@
   background: #1f5fd0;
   border-color: #1f5fd0;
   box-shadow: 0 8px 18px rgba(31, 95, 208, 0.2);
+}
+
+.filter-chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #637085;
+  background: #eef1f5;
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.filter-chip.is-active .filter-chip-count {
+  color: #1f5fd0;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .react-flow-shell {
