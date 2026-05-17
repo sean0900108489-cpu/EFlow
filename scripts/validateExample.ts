@@ -6,6 +6,8 @@ import {
 } from "../src/lib/applyEflowCommand";
 import { buildEFlowContextExport } from "../src/lib/buildEflowContextExport";
 import { buildLifecycleSummary } from "../src/lib/buildLifecycleSummary";
+import { buildManualEditSummary } from "../src/lib/buildManualEditSummary";
+import { buildReviewQueue } from "../src/lib/buildReviewQueue";
 import {
   isEFlowCommandEnvelope,
   validateEFlowCommandEnvelope,
@@ -47,12 +49,25 @@ const workspace = buildWorkspaceDocument({
 });
 const nodeIds = new Set(graph.nodes.map((node) => node.id));
 const lifecycleSummary = buildLifecycleSummary(graph);
+const manualSummary = buildManualEditSummary(graph);
 
 assert.equal(todoThoughtUniverseExample.schemaVersion, "engineering-flow-input/v0");
 assert.equal(graph.schemaVersion, "engineering-flow-graph/v0");
 assert.equal(graph.nodes.length, 52, "example graph should have 52 nodes");
 assert.equal(graph.edges.length, 93, "example graph should have 93 edges");
 assert.deepEqual(validateEngineeringFlowGraph(graph), { ok: true, errors: [] });
+assert.equal(manualSummary.manualNodeCount, 0, "generated graph should start with no manual nodes");
+assert.equal(manualSummary.manualEdgeCount, 0, "generated graph should start with no manual edges");
+assert.deepEqual(
+  manualSummary.manualNodeIds,
+  [],
+  "generated graph should start with no manual node ids",
+);
+assert.deepEqual(
+  manualSummary.manualEdgeIds,
+  [],
+  "generated graph should start with no manual edge ids",
+);
 
 for (const node of graph.nodes) {
   assert.ok(node.id, "node should have id");
@@ -466,6 +481,70 @@ assert.equal(
   "manual edge insert should not mutate the original graph",
 );
 assert.equal(manualEdgeInsertResult.graph.edges.length, graph.edges.length + 1);
+
+const insertedManualSummary = buildManualEditSummary(manualEdgeInsertResult.graph);
+assert.equal(insertedManualSummary.manualNodeCount, 1, "manual summary should count one manual node");
+assert.equal(insertedManualSummary.manualEdgeCount, 1, "manual summary should count one manual edge");
+assert.deepEqual(
+  insertedManualSummary.manualNodeIds,
+  [manualNode.id],
+  "manual summary should include inserted manual node id",
+);
+assert.deepEqual(
+  insertedManualSummary.manualEdgeIds,
+  [manualEdge.id],
+  "manual summary should include inserted manual edge id",
+);
+assert.deepEqual(
+  insertedManualSummary.nodesByReviewStatus.confirmed,
+  [manualNode.id],
+  "manual summary should bucket nodes by legacy review status",
+);
+assert.deepEqual(
+  insertedManualSummary.edgesByReviewStatus.confirmed,
+  [manualEdge.id],
+  "manual summary should bucket edges by legacy review status",
+);
+
+const manualStatusGraph = structuredClone(manualEdgeInsertResult.graph);
+manualStatusGraph.nodes = manualStatusGraph.nodes.map((node) =>
+  node.id === manualNode.id
+    ? { ...node, status: "needs_review", lifecycleStatus: "completed" }
+    : node,
+);
+manualStatusGraph.edges = manualStatusGraph.edges.map((edge) =>
+  edge.id === manualEdge.id
+    ? { ...edge, status: "suggested", lifecycleStatus: "blocked" }
+    : edge,
+);
+const manualStatusSummary = buildManualEditSummary(manualStatusGraph);
+assert.deepEqual(
+  manualStatusSummary.nodesByReviewStatus.needs_review,
+  [manualNode.id],
+  "manual summary should use node.status, not node.lifecycleStatus, for review buckets",
+);
+assert.deepEqual(
+  manualStatusSummary.edgesByReviewStatus.suggested,
+  [manualEdge.id],
+  "manual summary should use edge.status, not edge.lifecycleStatus, for review buckets",
+);
+
+const manualReviewQueue = buildReviewQueue(manualStatusGraph);
+const manualNodeReviewItem = manualReviewQueue.items.find(
+  (item) => item.graphItemId === manualNode.id,
+);
+const manualEdgeReviewItem = manualReviewQueue.items.find(
+  (item) => item.graphItemId === manualEdge.id,
+);
+assert.equal(
+  manualNodeReviewItem?.reason,
+  "Human-added manual context marked for review.",
+  "manual node review queue reason should be manual-aware",
+);
+assert.ok(
+  manualEdgeReviewItem?.reason.includes("Human-added manual relationship"),
+  "manual edge review queue reason should be manual-aware",
+);
 
 const duplicateManualEdgeIdResult = insertManualEdge(manualEdgeInsertResult.graph, {
   ...manualEdge,

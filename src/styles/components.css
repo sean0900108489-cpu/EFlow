@@ -618,6 +618,63 @@
   border-top: 1px solid var(--line);
 }
 
+.manual-context-summary {
+  display: grid;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.manual-context-total-pill {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #1f5fd0;
+  background: var(--blue-soft);
+  font-size: 0.78rem;
+  line-height: 1.1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.manual-context-empty {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.manual-context-status-groups {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-context-status-group {
+  display: grid;
+  gap: 6px;
+}
+
+.manual-context-status-group > span {
+  color: #465468;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.manual-context-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.manual-context-chip-row span,
+.review-manual-pill {
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #1f5fd0;
+  background: var(--blue-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .manual-node-panel,
 .manual-edge-panel {
   display: grid;

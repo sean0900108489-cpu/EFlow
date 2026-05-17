@@ -688,3 +688,69 @@ Recommended next milestone:
 > Manual Editing Integration Polish
 
 Keep the next polish small and focused on integration fit and rough edges; it should not become a full visual graph editor.
+
+## Completed Checkpoint: Manual Editing Integration Polish
+
+This checkpoint adds compact integration polish around manual graph edits without adding new editing capabilities.
+
+Files changed:
+
+- `src/lib/buildManualEditSummary.ts`
+- `src/components/graphEditing/ManualContextSummary.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/lib/buildReviewQueue.ts`
+- `src/components/review/ReviewItemCard.tsx`
+- `src/styles/components.css`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `buildManualEditSummary` for counting manual nodes and manual edges.
+- Manual items are detected by `item.provenance?.sourceType === "manual_edit"`.
+- Manual review buckets use legacy graph `status` fields, not `lifecycleStatus`.
+- Added a compact `Manual Context` section to the right inspector stack near Implementation Progress and the manual add panels.
+- The summary shows manual node count, manual relationship count, and compact nonzero review-status buckets.
+- Empty manual state displays `No manual context added yet.`
+- Added small manual badges in review cards for manual nodes and manual edges.
+- Review queue reason text is more explicit for human-added manual context and relationships.
+- Existing `NodeInspector` and `EdgeInspector` manual provenance badges were preserved.
+- Existing Add Manual Node UI and Add Manual Edge UI behavior was preserved.
+- Existing export, workspace persistence, local command import, graph generation, and lifecycle summary behavior was preserved.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Confirmed Todo Thought Universe example generation starts with 0 manual nodes and 0 manual relationships.
+- Confirmed Manual Context Summary appears after graph generation.
+- Confirmed adding a manual node updates manual node count.
+- Confirmed adding a manual edge updates manual relationship count.
+- Confirmed manual node still shows the `Manual context` badge in `NodeInspector`.
+- Confirmed manual edge still shows the `Manual relationship` badge in `EdgeInspector`.
+- Confirmed review queue shows a manual badge and manual-aware reason text for a manual item.
+- Confirmed EngineeringFlowGraph export includes manual node and edge.
+- Confirmed EFlow Context export includes manual node and edge.
+- Confirmed browser refresh restores manual items and the Manual Context Summary counts through existing workspace persistence.
+- Confirmed Add Manual Node UI and Add Manual Edge UI still work.
+- Confirmed Lifecycle Progress Summary still works.
+- Confirmed Local Command Import UI still exists.
+- Confirmed AI-Native Context Export UI still exists.
+- Confirmed no canvas direct editing UI was added.
+
+Known limitations:
+
+- Canvas direct editing still not implemented.
+- Drag-to-create still not implemented.
+- Canvas lifecycle badges still not implemented.
+- Lifecycle filters still not implemented.
+- Command history/audit log still not implemented.
+
+Recommended next milestone:
+
+> Command History / Audit Log foundation

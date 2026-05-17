@@ -10,6 +10,7 @@ import { LocalCommandImportPanel } from "../command/LocalCommandImportPanel";
 import { JsonExportPanel } from "../export/JsonExportPanel";
 import { AddManualEdgePanel } from "../graphEditing/AddManualEdgePanel";
 import { AddManualNodePanel } from "../graphEditing/AddManualNodePanel";
+import { ManualContextSummary } from "../graphEditing/ManualContextSummary";
 import { LifecycleProgressSummary } from "../lifecycle/LifecycleProgressSummary";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { EdgeInspector } from "./EdgeInspector";
@@ -61,6 +62,7 @@ export function InspectorPanel({
       <div className="inspector-stack">
         <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />
         <LifecycleProgressSummary graph={graph} />
+        <ManualContextSummary graph={graph} />
         <AddManualNodePanel
           graph={graph}
           onApplyGraph={onReplaceGraph}
@@ -101,6 +103,7 @@ export function InspectorPanel({
       <div className="inspector-stack">
         <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />
         <LifecycleProgressSummary graph={graph} />
+        <ManualContextSummary graph={graph} />
         <AddManualNodePanel
           graph={graph}
           onApplyGraph={onReplaceGraph}
@@ -152,6 +155,7 @@ export function InspectorPanel({
           onClearLocalWorkspace={onClearLocalWorkspace}
         />
         <LifecycleProgressSummary graph={graph} />
+        <ManualContextSummary graph={graph} />
         <AddManualNodePanel
           graph={graph}
           onApplyGraph={onReplaceGraph}

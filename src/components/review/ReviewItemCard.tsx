@@ -17,12 +17,20 @@ export function ReviewItemCard({
   onNeedsReview,
   onReject,
 }: ReviewItemCardProps) {
+  const manualBadge =
+    item.sourceType === "manual_edit"
+      ? item.kind === "node"
+        ? "Manual context"
+        : "Manual relationship"
+      : null;
+
   return (
     <article className={`review-item-card ${isSelected ? "is-selected" : ""}`}>
       <div className="review-card-topline">
         <div className="review-pill-row">
           <span className={`review-priority-pill priority-${item.priority}`}>{item.priority}</span>
           <span className="review-kind-pill">{item.kind}</span>
+          {manualBadge ? <span className="review-manual-pill">{manualBadge}</span> : null}
         </div>
         <span className={`status-pill status-${item.status}`}>{item.status}</span>
       </div>
@@ -31,7 +39,7 @@ export function ReviewItemCard({
       <p className="review-reason">{item.reason}</p>
       <div className="review-meta-row">
         <span>Confidence {item.confidence.toFixed(2)}</span>
-        {item.sourceType ? <span>{item.sourceType}</span> : null}
+        {item.sourceType && item.sourceType !== "manual_edit" ? <span>{item.sourceType}</span> : null}
       </div>
       <div className="review-card-actions">
         <button className="mini-button" type="button" onClick={() => onSelect(item)}>

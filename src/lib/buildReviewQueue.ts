@@ -130,6 +130,18 @@ function getEdgePriority(edge: EngineeringEdge): ReviewPriority {
 }
 
 function getNodeReason(node: EngineeringNode): string {
+  if (node.provenance.sourceType === "manual_edit") {
+    if (node.status === "confirmed") {
+      return "Human-added manual context.";
+    }
+
+    if (node.status === "needs_review") {
+      return "Human-added manual context marked for review.";
+    }
+
+    return "Human-added manual context that still needs confirmation.";
+  }
+
   if (node.status === "confirmed") {
     return "Human-confirmed.";
   }
@@ -142,6 +154,22 @@ function getNodeReason(node: EngineeringNode): string {
 }
 
 function getEdgeReason(edge: EngineeringEdge): string {
+  if (edge.provenance.sourceType === "manual_edit") {
+    if (edge.status === "rejected") {
+      return "Human-added manual relationship was rejected.";
+    }
+
+    if (edge.status === "suggested") {
+      return edge.description
+        ? `${edge.description} Human-added manual relationship that still needs confirmation.`
+        : "Human-added manual relationship that still needs confirmation.";
+    }
+
+    return edge.description
+      ? `${edge.description} Human-added manual relationship.`
+      : "Human-added manual relationship.";
+  }
+
   if (edge.status === "rejected") {
     return "Human rejected this relationship.";
   }
