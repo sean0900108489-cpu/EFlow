@@ -386,3 +386,50 @@ Recommended next milestone:
 > Local Command Import UI
 
 Do not begin this follow-up until explicitly instructed.
+
+## Completed Checkpoint: Local Command Import UI
+
+This checkpoint exposes the existing headless `eflow-command/v0.1` validation and graph apply helpers through a local-only UI panel.
+
+Files changed:
+
+- `src/components/command/LocalCommandImportPanel.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/App.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added a right-column Local AI Command Import panel.
+- Added paste-based JSON command validation for `eflow-command/v0.1`.
+- Added dry-run support through `dryRunEFlowCommandOnGraph` without graph mutation.
+- Added explicit apply support through `applyEFlowCommandToGraph`.
+- Applied commands update the current `EngineeringFlowGraph` through App state, preserving existing autosave/export behavior.
+- Added validation, parse error, dry-run/apply result, change, warning, and error displays.
+- Added an example command inserter that targets an existing graph node when available.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+
+Browser smoke check:
+
+- Passed for panel visibility, example command insertion, validation, dry-run without mutation, explicit apply, AI-native context export reflection, invalid JSON handling, invalid lifecycle validation, missing node rejection, existing Full AI Context and Workspace export visibility, and local autosave restore after refresh.
+
+Known boundaries:
+
+- This is local browser JSON handling only.
+- No command import backend, API, MCP server, CLI command, real AI API, repo analyzer, or agent execution was added.
+- The panel does not force-select updated graph items.
+- The panel does not add lifecycle badges to the canvas.
+- Manual Graph Editing was not implemented.
+
+Recommended next milestone:
+
+> Lifecycle State Display
+
+Alternative follow-up:
+
+> Manual Graph Editing / Add Missing Context

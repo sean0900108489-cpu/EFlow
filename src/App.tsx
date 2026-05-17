@@ -181,6 +181,10 @@ export default function App() {
     });
   }
 
+  function replaceGraphFromCommand(nextGraph: EngineeringFlowGraph) {
+    setEngineeringFlowGraph(nextGraph);
+  }
+
   function updateNodePosition(nodeId: string, position: { x: number; y: number }) {
     updateNode(nodeId, { position });
   }
@@ -247,6 +251,7 @@ export default function App() {
             onSelectEdge={selectEdge}
             onUpdateNode={updateNode}
             onUpdateEdge={updateEdge}
+            onReplaceGraph={replaceGraphFromCommand}
             onImportWorkspace={importWorkspaceDocument}
             onImportFullContext={importFullAIContext}
             onImportInput={importEngineeringFlowInput}

@@ -6,6 +6,7 @@ import type {
   EngineeringNode,
   FullAIContext,
 } from "../../types/engineeringFlow";
+import { LocalCommandImportPanel } from "../command/LocalCommandImportPanel";
 import { JsonExportPanel } from "../export/JsonExportPanel";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { EdgeInspector } from "./EdgeInspector";
@@ -22,6 +23,7 @@ type InspectorPanelProps = {
   onSelectEdge: (edgeId: string) => void;
   onUpdateNode: (nodeId: string, patch: Partial<EngineeringNode>) => void;
   onUpdateEdge: (edgeId: string, patch: Partial<EngineeringEdge>) => void;
+  onReplaceGraph: (graph: EngineeringFlowGraph) => void;
   onImportWorkspace: (workspace: EFlowWorkspaceDocument) => void;
   onImportFullContext: (context: FullAIContext) => void;
   onImportInput: (input: EngineeringFlowInput) => void;
@@ -38,6 +40,7 @@ export function InspectorPanel({
   onSelectEdge,
   onUpdateNode,
   onUpdateEdge,
+  onReplaceGraph,
   onImportWorkspace,
   onImportFullContext,
   onImportInput,
@@ -132,6 +135,7 @@ export function InspectorPanel({
           onUpdateNode={onUpdateNode}
           onUpdateEdge={onUpdateEdge}
         />
+        <LocalCommandImportPanel graph={graph} onApplyGraph={onReplaceGraph} />
         <JsonExportPanel
           input={input}
           graph={graph}
@@ -148,16 +152,19 @@ export function InspectorPanel({
   }
 
   return (
-    <EmptyInspector
-      input={input}
-      graph={graph}
-      selectedNodeId={selectedNodeId}
-      selectedEdgeId={selectedEdgeId}
-      autosaveStatus={autosaveStatus}
-      onImportWorkspace={onImportWorkspace}
-      onImportFullContext={onImportFullContext}
-      onImportInput={onImportInput}
-      onClearLocalWorkspace={onClearLocalWorkspace}
-    />
+    <div className="inspector-stack">
+      <EmptyInspector
+        input={input}
+        graph={graph}
+        selectedNodeId={selectedNodeId}
+        selectedEdgeId={selectedEdgeId}
+        autosaveStatus={autosaveStatus}
+        onImportWorkspace={onImportWorkspace}
+        onImportFullContext={onImportFullContext}
+        onImportInput={onImportInput}
+        onClearLocalWorkspace={onClearLocalWorkspace}
+      />
+      <LocalCommandImportPanel graph={graph} onApplyGraph={onReplaceGraph} />
+    </div>
   );
 }
