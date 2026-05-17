@@ -147,6 +147,111 @@
   gap: 14px;
 }
 
+.right-panel-stack {
+  gap: 12px;
+}
+
+.collapsible-section {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgba(221, 227, 236, 0.88);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.collapsible-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 0;
+  color: inherit;
+  background: rgba(248, 250, 252, 0.76);
+  text-align: left;
+}
+
+.collapsible-section-header:hover {
+  background: rgba(240, 243, 248, 0.82);
+}
+
+.collapsible-section-header:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: -3px;
+}
+
+.collapsible-section-title-block {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.collapsible-section-title {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.collapsible-section-subtitle {
+  color: var(--muted-soft);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.collapsible-section-right {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.collapsible-section-meta {
+  max-width: 118px;
+  overflow: hidden;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: #f0f3f8;
+  font-size: 0.7rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsible-section-toggle {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.collapsible-section-body {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.collapsible-section-body[hidden] {
+  display: none;
+}
+
+.collapsible-section-body > :first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .editor-section,
 .inspector-section,
 .summary-panel,

@@ -13,6 +13,7 @@ import { JsonExportPanel } from "../export/JsonExportPanel";
 import { AddManualEdgePanel } from "../graphEditing/AddManualEdgePanel";
 import { AddManualNodePanel } from "../graphEditing/AddManualNodePanel";
 import { ManualContextSummary } from "../graphEditing/ManualContextSummary";
+import { CollapsibleSection } from "../layout/CollapsibleSection";
 import { LifecycleProgressSummary } from "../lifecycle/LifecycleProgressSummary";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { EdgeInspector } from "./EdgeInspector";
@@ -63,135 +64,182 @@ export function InspectorPanel({
     ? graph?.edges.find((edge) => edge.id === selectedEdgeId) ?? null
     : null;
 
-  if (selectedNode && graph) {
-    return (
-      <div className="inspector-stack">
-        <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />
-        <LifecycleProgressSummary graph={graph} />
-        <ManualContextSummary graph={graph} />
-        <AuditLogPanel auditLog={auditLog} />
-        <AddManualNodePanel
-          graph={graph}
-          onApplyGraph={onReplaceGraph}
-          onSelectNode={onSelectNode}
-          onRecordAuditEvent={onRecordAuditEvent}
-        />
-        <AddManualEdgePanel
-          graph={graph}
-          onApplyGraph={onReplaceGraph}
-          onSelectEdge={onSelectEdge}
-          onRecordAuditEvent={onRecordAuditEvent}
-        />
-        <ReviewPanel
-          compact
-          graph={graph}
-          selectedNodeId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
-          onSelectNode={onSelectNode}
-          onSelectEdge={onSelectEdge}
-          onUpdateNode={onUpdateNode}
-          onUpdateEdge={onUpdateEdge}
-        />
-        <JsonExportPanel
-          input={input}
-          graph={graph}
-          selectedNodeId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
-          auditLog={auditLog}
-          autosaveStatus={autosaveStatus}
-          onImportWorkspace={onImportWorkspace}
-          onImportFullContext={onImportFullContext}
-          onImportInput={onImportInput}
-          onClearLocalWorkspace={onClearLocalWorkspace}
-        />
-      </div>
-    );
-  }
-
-  if (selectedEdge && graph) {
-    return (
-      <div className="inspector-stack">
-        <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />
-        <LifecycleProgressSummary graph={graph} />
-        <ManualContextSummary graph={graph} />
-        <AuditLogPanel auditLog={auditLog} />
-        <AddManualNodePanel
-          graph={graph}
-          onApplyGraph={onReplaceGraph}
-          onSelectNode={onSelectNode}
-          onRecordAuditEvent={onRecordAuditEvent}
-        />
-        <AddManualEdgePanel
-          graph={graph}
-          onApplyGraph={onReplaceGraph}
-          onSelectEdge={onSelectEdge}
-          onRecordAuditEvent={onRecordAuditEvent}
-        />
-        <ReviewPanel
-          compact
-          graph={graph}
-          selectedNodeId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
-          onSelectNode={onSelectNode}
-          onSelectEdge={onSelectEdge}
-          onUpdateNode={onUpdateNode}
-          onUpdateEdge={onUpdateEdge}
-        />
-        <JsonExportPanel
-          input={input}
-          graph={graph}
-          selectedNodeId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
-          auditLog={auditLog}
-          autosaveStatus={autosaveStatus}
-          onImportWorkspace={onImportWorkspace}
-          onImportFullContext={onImportFullContext}
-          onImportInput={onImportInput}
-          onClearLocalWorkspace={onClearLocalWorkspace}
-        />
-      </div>
-    );
-  }
-
   if (graph) {
+    const selectedItemMeta = selectedNode ? "Node" : selectedEdge ? "Edge" : "Project";
+    const selectedItemSubtitle = selectedNode
+      ? "Inspect and edit the selected graph node."
+      : selectedEdge
+        ? "Inspect and edit the selected relationship."
+        : "Review the generated graph summary.";
+
     return (
-      <div className="inspector-stack">
+      <div className="inspector-stack right-panel-stack">
+        <CollapsibleSection
+          title="Selected Item"
+          subtitle={selectedItemSubtitle}
+          meta={selectedItemMeta}
+          defaultOpen
+        >
+          {selectedNode ? (
+            <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />
+          ) : selectedEdge ? (
+            <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />
+          ) : (
+            <EmptyInspector
+              input={input}
+              graph={graph}
+              showExport={false}
+              selectedNodeId={selectedNodeId}
+              selectedEdgeId={selectedEdgeId}
+              autosaveStatus={autosaveStatus}
+              onImportWorkspace={onImportWorkspace}
+              onImportFullContext={onImportFullContext}
+              onImportInput={onImportInput}
+              onClearLocalWorkspace={onClearLocalWorkspace}
+            />
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Review"
+          subtitle="Confirm generated nodes and relationships."
+          meta="Queue"
+          defaultOpen
+        >
+          <ReviewPanel
+            compact={Boolean(selectedNode || selectedEdge)}
+            graph={graph}
+            selectedNodeId={selectedNodeId}
+            selectedEdgeId={selectedEdgeId}
+            onSelectNode={onSelectNode}
+            onSelectEdge={onSelectEdge}
+            onUpdateNode={onUpdateNode}
+            onUpdateEdge={onUpdateEdge}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Implementation Progress"
+          subtitle="Lifecycle progress and manual context."
+          meta="Live"
+          defaultOpen
+        >
+          <LifecycleProgressSummary graph={graph} />
+          <ManualContextSummary graph={graph} />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Manual Editing"
+          subtitle="Add missing graph nodes and relationships."
+          meta="Local"
+        >
+          <AddManualNodePanel
+            graph={graph}
+            onApplyGraph={onReplaceGraph}
+            onSelectNode={onSelectNode}
+            onRecordAuditEvent={onRecordAuditEvent}
+          />
+          <AddManualEdgePanel
+            graph={graph}
+            onApplyGraph={onReplaceGraph}
+            onSelectEdge={onSelectEdge}
+            onRecordAuditEvent={onRecordAuditEvent}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Change History"
+          subtitle="Local workspace audit history."
+          meta={`${auditLog.length} events`}
+        >
+          <AuditLogPanel auditLog={auditLog} />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="AI Interop"
+          subtitle="Local command intake and AI-native context."
+          meta="JSON"
+        >
+          <LocalCommandImportPanel
+            graph={graph}
+            onApplyGraph={onReplaceGraph}
+            onRecordAuditEvent={onRecordAuditEvent}
+          />
+          <JsonExportPanel
+            input={input}
+            graph={graph}
+            selectedNodeId={selectedNodeId}
+            selectedEdgeId={selectedEdgeId}
+            auditLog={auditLog}
+            autosaveStatus={autosaveStatus}
+            showJsonExports={false}
+            showWorkspacePersistence={false}
+            onImportWorkspace={onImportWorkspace}
+            onImportFullContext={onImportFullContext}
+            onImportInput={onImportInput}
+            onClearLocalWorkspace={onClearLocalWorkspace}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Workspace / Export"
+          subtitle="Workspace persistence and legacy JSON handoffs."
+          meta="Files"
+        >
+          <JsonExportPanel
+            input={input}
+            graph={graph}
+            selectedNodeId={selectedNodeId}
+            selectedEdgeId={selectedEdgeId}
+            auditLog={auditLog}
+            autosaveStatus={autosaveStatus}
+            showEFlowContextExport={false}
+            onImportWorkspace={onImportWorkspace}
+            onImportFullContext={onImportFullContext}
+            onImportInput={onImportInput}
+            onClearLocalWorkspace={onClearLocalWorkspace}
+          />
+        </CollapsibleSection>
+      </div>
+    );
+  }
+
+  return (
+    <div className="inspector-stack right-panel-stack">
+      <CollapsibleSection
+        title="Selected Item"
+        subtitle="Project summary before graph generation."
+        meta="Project"
+        defaultOpen
+      >
         <EmptyInspector
           input={input}
           graph={graph}
           showExport={false}
           selectedNodeId={selectedNodeId}
           selectedEdgeId={selectedEdgeId}
+          auditLog={auditLog}
           autosaveStatus={autosaveStatus}
           onImportWorkspace={onImportWorkspace}
           onImportFullContext={onImportFullContext}
           onImportInput={onImportInput}
           onClearLocalWorkspace={onClearLocalWorkspace}
         />
-        <LifecycleProgressSummary graph={graph} />
-        <ManualContextSummary graph={graph} />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Change History"
+        subtitle="Local workspace audit history."
+        meta={`${auditLog.length} events`}
+      >
         <AuditLogPanel auditLog={auditLog} />
-        <AddManualNodePanel
-          graph={graph}
-          onApplyGraph={onReplaceGraph}
-          onSelectNode={onSelectNode}
-          onRecordAuditEvent={onRecordAuditEvent}
-        />
-        <AddManualEdgePanel
-          graph={graph}
-          onApplyGraph={onReplaceGraph}
-          onSelectEdge={onSelectEdge}
-          onRecordAuditEvent={onRecordAuditEvent}
-        />
-        <ReviewPanel
-          graph={graph}
-          selectedNodeId={selectedNodeId}
-          selectedEdgeId={selectedEdgeId}
-          onSelectNode={onSelectNode}
-          onSelectEdge={onSelectEdge}
-          onUpdateNode={onUpdateNode}
-          onUpdateEdge={onUpdateEdge}
-        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="AI Interop"
+        subtitle="Validate local commands and prepare AI context."
+        meta="JSON"
+      >
         <LocalCommandImportPanel
           graph={graph}
           onApplyGraph={onReplaceGraph}
@@ -204,35 +252,34 @@ export function InspectorPanel({
           selectedEdgeId={selectedEdgeId}
           auditLog={auditLog}
           autosaveStatus={autosaveStatus}
+          showJsonExports={false}
+          showWorkspacePersistence={false}
           onImportWorkspace={onImportWorkspace}
           onImportFullContext={onImportFullContext}
           onImportInput={onImportInput}
           onClearLocalWorkspace={onClearLocalWorkspace}
         />
-      </div>
-    );
-  }
+      </CollapsibleSection>
 
-  return (
-    <div className="inspector-stack">
-      <EmptyInspector
-        input={input}
-        graph={graph}
-        selectedNodeId={selectedNodeId}
-        selectedEdgeId={selectedEdgeId}
-        auditLog={auditLog}
-        autosaveStatus={autosaveStatus}
-        onImportWorkspace={onImportWorkspace}
-        onImportFullContext={onImportFullContext}
-        onImportInput={onImportInput}
-        onClearLocalWorkspace={onClearLocalWorkspace}
-      />
-      <AuditLogPanel auditLog={auditLog} />
-      <LocalCommandImportPanel
-        graph={graph}
-        onApplyGraph={onReplaceGraph}
-        onRecordAuditEvent={onRecordAuditEvent}
-      />
+      <CollapsibleSection
+        title="Workspace / Export"
+        subtitle="Import, restore, and export workspace JSON."
+        meta="Files"
+      >
+        <JsonExportPanel
+          input={input}
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          auditLog={auditLog}
+          autosaveStatus={autosaveStatus}
+          showEFlowContextExport={false}
+          onImportWorkspace={onImportWorkspace}
+          onImportFullContext={onImportFullContext}
+          onImportInput={onImportInput}
+          onClearLocalWorkspace={onClearLocalWorkspace}
+        />
+      </CollapsibleSection>
     </div>
   );
 }

@@ -18,6 +18,9 @@ type JsonExportPanelProps = {
   selectedEdgeId?: string | null;
   auditLog?: EFlowAuditEvent[];
   autosaveStatus?: string;
+  showJsonExports?: boolean;
+  showEFlowContextExport?: boolean;
+  showWorkspacePersistence?: boolean;
   onImportWorkspace?: (workspace: EFlowWorkspaceDocument) => void;
   onImportFullContext?: (context: FullAIContext) => void;
   onImportInput?: (input: EngineeringFlowInput) => void;
@@ -31,6 +34,9 @@ export function JsonExportPanel({
   selectedEdgeId = null,
   auditLog = [],
   autosaveStatus = "Autosave ready",
+  showJsonExports = true,
+  showEFlowContextExport = true,
+  showWorkspacePersistence = true,
   onImportWorkspace,
   onImportFullContext,
   onImportInput,
@@ -53,28 +59,35 @@ export function JsonExportPanel({
           onClearLocalWorkspace,
         }
       : null;
+  const shouldShowWorkspacePersistence = showWorkspacePersistence && workspaceHandlers !== null;
+
+  if (!showJsonExports && !showEFlowContextExport && !shouldShowWorkspacePersistence) {
+    return null;
+  }
 
   return (
     <div className="export-stack">
-      <section className="export-panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">Export</p>
-            <h2>AI-readable JSON</h2>
+      {showJsonExports ? (
+        <section className="export-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Export</p>
+              <h2>AI-readable JSON</h2>
+            </div>
           </div>
-        </div>
-        <div className="export-actions">
-          <CopyJsonButton label="Copy EngineeringFlowInput JSON" value={input} />
-          <CopyJsonButton
-            label="Copy EngineeringFlowGraph JSON"
-            value={graph}
-            disabled={!graph}
-          />
-          <CopyJsonButton label="Copy Full AI Context JSON" value={fullContext} />
-        </div>
-      </section>
-      <EFlowContextExportPanel input={input} graph={graph} />
-      {workspaceHandlers ? (
+          <div className="export-actions">
+            <CopyJsonButton label="Copy EngineeringFlowInput JSON" value={input} />
+            <CopyJsonButton
+              label="Copy EngineeringFlowGraph JSON"
+              value={graph}
+              disabled={!graph}
+            />
+            <CopyJsonButton label="Copy Full AI Context JSON" value={fullContext} />
+          </div>
+        </section>
+      ) : null}
+      {showEFlowContextExport ? <EFlowContextExportPanel input={input} graph={graph} /> : null}
+      {shouldShowWorkspacePersistence && workspaceHandlers ? (
         <WorkspacePersistencePanel
           workspace={workspace}
           autosaveStatus={autosaveStatus}

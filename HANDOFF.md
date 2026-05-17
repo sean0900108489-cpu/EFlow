@@ -1196,3 +1196,73 @@ Known limitations:
 Recommended next milestone:
 
 > Deployment / Release Readiness Notes
+
+## Completed Checkpoint: UI Right Panel Organization / Collapsible Sections
+
+This checkpoint organizes the right-side workspace into calm collapsible sections without changing graph generation, command behavior, workspace persistence, audit semantics, or schema behavior.
+
+Files changed:
+
+- `src/components/layout/CollapsibleSection.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/components/export/JsonExportPanel.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added a reusable `CollapsibleSection` component with local open/closed state, button semantics, `aria-expanded`, and section-specific accessible labels.
+- Grouped the right panel at the existing `InspectorPanel` boundary to avoid broad app state refactors.
+- Added `JsonExportPanel` display flags so AI-native context export can sit under AI Interop while workspace/base JSON export can sit under Workspace / Export.
+- Created these right panel groups:
+  - Selected Item
+  - Review
+  - Implementation Progress
+  - Manual Editing
+  - Change History
+  - AI Interop
+  - Workspace / Export
+- Default open sections are Selected Item, Review, and Implementation Progress.
+- Default collapsed sections are Manual Editing, Change History, AI Interop, and Workspace / Export.
+- Section state is local React component state only and is not persisted to workspace JSON.
+- Preserved existing Inspector, Review, Lifecycle Progress, Manual Context, Manual Node/Edge, Audit Log, Local Command Import, AI-Native Context Export, Workspace export/import, and JSON export behavior.
+- Added minimal CSS for section headers, subtle borders/backgrounds, compact metadata, and plus/minus toggles.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Loaded Todo Thought Universe example and generated the engineering flow.
+- Confirmed right panel section defaults render cleanly.
+- Toggled every collapsible section and reopened the working sections.
+- Confirmed NodeInspector still selects and edits node lifecycle status.
+- Confirmed EdgeInspector still selects and edits edge lifecycle status.
+- Confirmed Review workflow still filters/selects/confirms review items.
+- Confirmed Lifecycle Progress Summary updates after lifecycle edits.
+- Confirmed Manual Context Summary updates after manual node and manual edge creation.
+- Added a manual node and a manual edge through the reorganized panel.
+- Confirmed Audit Log records and displays manual and AI command events.
+- Inserted an example local AI command, validated it, dry-ran it, and applied it.
+- Confirmed AI command apply updates graph state and audit history.
+- Confirmed AI-Native Context Export copies `eflow-context/v0.1` JSON.
+- Confirmed Workspace JSON copy/import works.
+- Confirmed canvas lifecycle badges still appear.
+- Confirmed lifecycle canvas filters still work.
+- Refreshed the browser and confirmed workspace restore still works.
+- Confirmed no backend, API, MCP, CLI, real AI API, repo analyzer, agent execution, undo/replay, canvas direct editing, or drag-to-create feature was added.
+
+Known limitations:
+
+- Section open/closed state is not persisted.
+- No layout personalization.
+- No advanced panel search.
+- Deployment/release docs are still pending.
+
+Recommended next milestone:
+
+> README / Release Documentation Final Polish
