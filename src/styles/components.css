@@ -518,6 +518,74 @@
   font-size: 1rem;
 }
 
+.lifecycle-summary {
+  display: grid;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.lifecycle-total-pill {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #1f5fd0;
+  background: var(--blue-soft);
+  font-size: 0.78rem;
+  line-height: 1.1;
+  text-align: right;
+}
+
+.lifecycle-count-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(42px, max-content) minmax(42px, max-content);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.lifecycle-count-grid > span,
+.lifecycle-count-row > span,
+.lifecycle-count-row > strong {
+  min-width: 0;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.lifecycle-count-grid > span:not(:nth-child(3n)),
+.lifecycle-count-row > span,
+.lifecycle-count-row > strong:first-of-type {
+  border-right: 1px solid var(--line);
+}
+
+.lifecycle-count-heading {
+  background: #f0f3f8;
+  font-weight: 800;
+}
+
+.lifecycle-count-row {
+  display: contents;
+}
+
+.lifecycle-count-row:last-child > span,
+.lifecycle-count-row:last-child > strong {
+  border-bottom: 0;
+}
+
+.lifecycle-status-label {
+  overflow-wrap: anywhere;
+}
+
+.lifecycle-count-value {
+  color: var(--text);
+  font-weight: 850;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .export-stack,
 .export-actions {
   display: grid;

@@ -8,6 +8,7 @@ import type {
 } from "../../types/engineeringFlow";
 import { LocalCommandImportPanel } from "../command/LocalCommandImportPanel";
 import { JsonExportPanel } from "../export/JsonExportPanel";
+import { LifecycleProgressSummary } from "../lifecycle/LifecycleProgressSummary";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { EdgeInspector } from "./EdgeInspector";
 import { EmptyInspector } from "./EmptyInspector";
@@ -53,10 +54,11 @@ export function InspectorPanel({
     ? graph?.edges.find((edge) => edge.id === selectedEdgeId) ?? null
     : null;
 
-  if (selectedNode) {
+  if (selectedNode && graph) {
     return (
       <div className="inspector-stack">
         <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />
+        <LifecycleProgressSummary graph={graph} />
         <ReviewPanel
           compact
           graph={graph}
@@ -82,10 +84,11 @@ export function InspectorPanel({
     );
   }
 
-  if (selectedEdge) {
+  if (selectedEdge && graph) {
     return (
       <div className="inspector-stack">
         <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />
+        <LifecycleProgressSummary graph={graph} />
         <ReviewPanel
           compact
           graph={graph}
@@ -126,6 +129,7 @@ export function InspectorPanel({
           onImportInput={onImportInput}
           onClearLocalWorkspace={onClearLocalWorkspace}
         />
+        <LifecycleProgressSummary graph={graph} />
         <ReviewPanel
           graph={graph}
           selectedNodeId={selectedNodeId}

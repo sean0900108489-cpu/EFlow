@@ -5,6 +5,7 @@ import {
   dryRunEFlowCommandOnGraph,
 } from "../src/lib/applyEflowCommand";
 import { buildEFlowContextExport } from "../src/lib/buildEflowContextExport";
+import { buildLifecycleSummary } from "../src/lib/buildLifecycleSummary";
 import {
   isEFlowCommandEnvelope,
   validateEFlowCommandEnvelope,
@@ -39,6 +40,7 @@ const workspace = buildWorkspaceDocument({
   selectedEdgeId: null,
 });
 const nodeIds = new Set(graph.nodes.map((node) => node.id));
+const lifecycleSummary = buildLifecycleSummary(graph);
 
 assert.equal(todoThoughtUniverseExample.schemaVersion, "engineering-flow-input/v0");
 assert.equal(graph.schemaVersion, "engineering-flow-graph/v0");
@@ -120,7 +122,83 @@ for (const status of LIFECYCLE_STATUSES) {
     status in eflowContext.progressSummary.edgesByLifecycle,
     `edge progress summary should include ${status}`,
   );
+  assert.ok(status in lifecycleSummary.nodeCounts, `node lifecycle count should include ${status}`);
+  assert.ok(status in lifecycleSummary.edgeCounts, `edge lifecycle count should include ${status}`);
+  assert.ok(status in lifecycleSummary.nodesByLifecycle, `node lifecycle bucket should include ${status}`);
+  assert.ok(status in lifecycleSummary.edgesByLifecycle, `edge lifecycle bucket should include ${status}`);
 }
+assert.equal(
+  lifecycleSummary.nodeCounts.planned,
+  graph.nodes.length,
+  "missing node lifecycleStatus should count as planned",
+);
+assert.equal(
+  lifecycleSummary.edgeCounts.planned,
+  graph.edges.length,
+  "missing edge lifecycleStatus should count as planned",
+);
+assert.equal(
+  LIFECYCLE_STATUSES.reduce((total, status) => total + lifecycleSummary.nodeCounts[status], 0),
+  graph.nodes.length,
+  "node lifecycle counts should sum to generated node count",
+);
+assert.equal(
+  LIFECYCLE_STATUSES.reduce((total, status) => total + lifecycleSummary.edgeCounts[status], 0),
+  graph.edges.length,
+  "edge lifecycle counts should sum to generated edge count",
+);
+assert.deepEqual(
+  lifecycleSummary.nodesByLifecycle.planned,
+  graph.nodes.map((node) => node.id),
+  "generated nodes without lifecycleStatus should be bucketed as planned",
+);
+assert.deepEqual(
+  lifecycleSummary.edgesByLifecycle.planned,
+  graph.edges.map((edge) => edge.id),
+  "generated edges without lifecycleStatus should be bucketed as planned",
+);
+
+const lifecycleMutationGraph = structuredClone(graph);
+lifecycleMutationGraph.nodes[0] = {
+  ...lifecycleMutationGraph.nodes[0],
+  lifecycleStatus: "completed",
+};
+lifecycleMutationGraph.nodes[1] = {
+  ...lifecycleMutationGraph.nodes[1],
+  lifecycleStatus: "developing",
+};
+lifecycleMutationGraph.nodes[2] = {
+  ...lifecycleMutationGraph.nodes[2],
+  lifecycleStatus: "blocked",
+};
+lifecycleMutationGraph.edges[0] = {
+  ...lifecycleMutationGraph.edges[0],
+  lifecycleStatus: "completed",
+};
+lifecycleMutationGraph.edges[1] = {
+  ...lifecycleMutationGraph.edges[1],
+  lifecycleStatus: "developing",
+};
+lifecycleMutationGraph.edges[2] = {
+  ...lifecycleMutationGraph.edges[2],
+  lifecycleStatus: "blocked",
+};
+
+const mutatedLifecycleSummary = buildLifecycleSummary(lifecycleMutationGraph);
+assert.equal(mutatedLifecycleSummary.nodeCounts.completed, 1);
+assert.equal(mutatedLifecycleSummary.nodeCounts.developing, 1);
+assert.equal(mutatedLifecycleSummary.nodeCounts.blocked, 1);
+assert.equal(mutatedLifecycleSummary.nodeCounts.planned, graph.nodes.length - 3);
+assert.equal(mutatedLifecycleSummary.edgeCounts.completed, 1);
+assert.equal(mutatedLifecycleSummary.edgeCounts.developing, 1);
+assert.equal(mutatedLifecycleSummary.edgeCounts.blocked, 1);
+assert.equal(mutatedLifecycleSummary.edgeCounts.planned, graph.edges.length - 3);
+assert.deepEqual(mutatedLifecycleSummary.nodesByLifecycle.completed, [graph.nodes[0].id]);
+assert.deepEqual(mutatedLifecycleSummary.nodesByLifecycle.developing, [graph.nodes[1].id]);
+assert.deepEqual(mutatedLifecycleSummary.nodesByLifecycle.blocked, [graph.nodes[2].id]);
+assert.deepEqual(mutatedLifecycleSummary.edgesByLifecycle.completed, [graph.edges[0].id]);
+assert.deepEqual(mutatedLifecycleSummary.edgesByLifecycle.developing, [graph.edges[1].id]);
+assert.deepEqual(mutatedLifecycleSummary.edgesByLifecycle.blocked, [graph.edges[2].id]);
 assert.ok(
   graph.nodes.every((node) => eflowContext.dependencyIndex[node.id]),
   "dependencyIndex should have one entry per node",

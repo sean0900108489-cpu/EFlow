@@ -472,3 +472,45 @@ Known limitations:
 Recommended next milestone:
 
 > Lifecycle Progress Summary
+
+## Completed Checkpoint: Lifecycle Progress Summary
+
+This checkpoint adds a compact human-facing lifecycle progress readout derived from the current graph state.
+
+Files changed:
+
+- `src/lib/buildLifecycleSummary.ts`
+- `src/components/lifecycle/LifecycleProgressSummary.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/styles/components.css`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `buildLifecycleSummary` for node and edge lifecycle counts and lifecycle ID buckets.
+- Missing node and edge `lifecycleStatus` values count as `planned`.
+- Added an `Implementation Progress` section to the right inspector stack.
+- The summary shows compact node and edge counts by lifecycle status.
+- The summary derives from the current `EngineeringFlowGraph`, so inspector edits, local command applies, and restored workspace graph state update it naturally.
+- Existing review status controls, command import behavior, graph generation, persistence, and export behavior were preserved.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed for Todo Thought Universe example generation, planned default lifecycle counts, node lifecycle edit count updates, edge lifecycle edit count updates, Local Command Import lifecycle update reflection, refresh/local workspace restore, NodeInspector lifecycle controls, EdgeInspector lifecycle controls, AI-Native Context Export visibility, and Local Command Import UI visibility.
+
+Known limitations:
+
+- No canvas lifecycle badges yet.
+- No lifecycle filters yet.
+- Manual Graph Editing still not implemented.
+
+Recommended next milestone:
+
+> Manual Graph Editing Headless Helpers
