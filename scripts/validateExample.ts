@@ -38,7 +38,10 @@ import {
   REVIEW_STATUSES,
   type EFlowCommandEnvelope,
 } from "../src/types/eflowCommand";
-import { EFLOW_AUDIT_SCHEMA_VERSION } from "../src/types/eflowAudit";
+import {
+  EFLOW_AUDIT_EVENT_TYPES,
+  EFLOW_AUDIT_SCHEMA_VERSION,
+} from "../src/types/eflowAudit";
 
 const graph = generateEngineeringFlow(todoThoughtUniverseExample);
 const fullContext = buildFullAIContext(todoThoughtUniverseExample, graph);
@@ -72,6 +75,58 @@ const auditEvent = createAuditEvent({
   after: {
     reviewStatus: "confirmed",
     lifecycleStatus: "planned",
+  },
+});
+const graphGeneratedAuditEvent = createAuditEvent({
+  createdAt: "2026-05-17T00:02:00.000Z",
+  actor: {
+    type: "human",
+    id: "local-user",
+    name: "Local user",
+  },
+  source: "manual_ui",
+  eventType: "graph_generated",
+  summary: `Generated engineering graph with ${graph.nodes.length} nodes and ${graph.edges.length} edges.`,
+  target: {
+    type: "graph",
+    id: graph.id,
+  },
+  after: {
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+  },
+  metadata: {
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+    sourceInputId: graph.sourceInputId,
+    projectName: todoThoughtUniverseExample.projectName,
+  },
+});
+const workspaceImportedAuditEvent = createAuditEvent({
+  createdAt: "2026-05-17T00:03:00.000Z",
+  actor: {
+    type: "human",
+    id: "local-user",
+    name: "Local user",
+  },
+  source: "workspace",
+  eventType: "workspace_imported",
+  summary: `Imported workspace "${workspace.workspaceName}" with ${graph.nodes.length} nodes and ${graph.edges.length} edges.`,
+  target: {
+    type: "workspace",
+    id: todoThoughtUniverseExample.id,
+  },
+  after: {
+    projectName: todoThoughtUniverseExample.projectName,
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+    importedAuditEventCount: 1,
+  },
+  metadata: {
+    projectName: todoThoughtUniverseExample.projectName,
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+    importedAuditEventCount: 1,
   },
 });
 const workspaceWithAuditLog = buildWorkspaceDocument({
@@ -289,6 +344,28 @@ assert.ok(
 assert.equal(auditEvent.schemaVersion, EFLOW_AUDIT_SCHEMA_VERSION);
 assert.ok(auditEvent.id.startsWith("audit-"), "audit event id should be prefixed");
 assert.equal(auditEvent.eventType, "manual_node_created");
+assert.ok(
+  EFLOW_AUDIT_EVENT_TYPES.includes("graph_generated"),
+  "known audit event types should include graph_generated",
+);
+assert.ok(
+  EFLOW_AUDIT_EVENT_TYPES.includes("workspace_imported"),
+  "known audit event types should include workspace_imported",
+);
+assert.equal(graphGeneratedAuditEvent.schemaVersion, EFLOW_AUDIT_SCHEMA_VERSION);
+assert.equal(graphGeneratedAuditEvent.eventType, "graph_generated");
+assert.equal(graphGeneratedAuditEvent.target?.type, "graph");
+assert.equal(graphGeneratedAuditEvent.target?.id, graph.id);
+assert.equal(
+  graphGeneratedAuditEvent.metadata?.nodeCount,
+  graph.nodes.length,
+  "graph_generated audit metadata should store node count",
+);
+assert.equal(
+  graphGeneratedAuditEvent.metadata?.edgeCount,
+  graph.edges.length,
+  "graph_generated audit metadata should store edge count",
+);
 const emptyAuditLog = [];
 const appendedAuditLog = appendAuditEvent(emptyAuditLog, auditEvent);
 assert.deepEqual(appendedAuditLog, [auditEvent], "appendAuditEvent should append event");
@@ -338,9 +415,40 @@ assert.equal(
   1,
   "audit summary should bucket event types",
 );
+const expandedAuditSummary = buildAuditLogSummary([
+  workspaceImportedAuditEvent,
+  graphGeneratedAuditEvent,
+  ...nextAuditLog,
+]);
+assert.equal(expandedAuditSummary.totalEvents, 4, "audit summary should count expanded events");
+assert.equal(
+  expandedAuditSummary.byEventType.graph_generated,
+  1,
+  "audit summary should bucket graph_generated events",
+);
+assert.equal(
+  expandedAuditSummary.byEventType.workspace_imported,
+  1,
+  "audit summary should bucket workspace_imported events",
+);
+assert.equal(
+  expandedAuditSummary.bySource.workspace,
+  1,
+  "audit summary should count workspace import source",
+);
 assert.ok(
   isEFlowWorkspaceDocument(workspaceWithAuditLog),
   "workspace validation should accept valid auditLog",
+);
+assert.ok(
+  isEFlowWorkspaceDocument(
+    buildWorkspaceDocument({
+      input: todoThoughtUniverseExample,
+      graph,
+      auditLog: [graphGeneratedAuditEvent, workspaceImportedAuditEvent],
+    }),
+  ),
+  "workspace validation should accept valid graph/import audit events",
 );
 const parsedWorkspaceWithAuditLog = JSON.parse(JSON.stringify(workspaceWithAuditLog)) as unknown;
 assert.ok(

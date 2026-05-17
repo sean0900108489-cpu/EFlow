@@ -227,6 +227,7 @@ export function InspectorPanel({
         onImportInput={onImportInput}
         onClearLocalWorkspace={onClearLocalWorkspace}
       />
+      <AuditLogPanel auditLog={auditLog} />
       <LocalCommandImportPanel
         graph={graph}
         onApplyGraph={onReplaceGraph}

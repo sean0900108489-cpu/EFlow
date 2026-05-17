@@ -38,6 +38,11 @@ export interface EFlowAuditTarget {
 }
 
 export const EFLOW_AUDIT_EVENT_TYPES = [
+  "graph_generated",
+  "graph_replaced",
+  "workspace_imported",
+  "engineering_input_imported",
+  "full_ai_context_imported",
   "manual_node_created",
   "manual_edge_created",
   "ai_command_applied",

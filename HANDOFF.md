@@ -848,3 +848,90 @@ Recommended next milestone:
 > Audit Coverage Polish
 
 Keep the next step small: audit graph generation/import/reset boundaries and refine event summaries before exploring larger canvas lifecycle badges or filters.
+
+## Completed Checkpoint: Audit Coverage Polish
+
+This checkpoint improves audit event coverage for existing local UI state changes without adding undo, replay, backend services, conflict resolution, canvas lifecycle badges, lifecycle filters, or canvas editing features.
+
+Files changed:
+
+- `src/types/eflowAudit.ts`
+- `src/App.tsx`
+- `src/components/audit/AuditLogPanel.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added known audit event types for `graph_generated`, `graph_replaced`, `workspace_imported`, `engineering_input_imported`, and `full_ai_context_imported` while keeping `eflow-audit/v0.1`.
+- Graph generation now records `graph_generated` with graph target id, node count, edge count, source input id, and project name.
+- Graph replacement/regeneration now records `graph_replaced` with compact before/after graph counts.
+- Workspace import now preserves the imported audit log and appends a compact `workspace_imported` event.
+- EngineeringFlowInput import now records `engineering_input_imported` with compact project metadata and no imported payload body.
+- Full AI Context import now records `full_ai_context_imported` with compact project and graph metadata.
+- Review Queue node and edge review actions continue to use the existing audited `updateNode` and `updateEdge` paths, so no duplicate review events were added.
+- The Audit Log panel now renders friendly labels for known event types and sources.
+- The no-graph inspector stack now shows the existing Audit Log panel so input-import audit events are visible before a graph is generated.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Confirmed Todo Thought Universe example generation records `graph_generated`.
+- Confirmed Local Command Import apply still records `ai_command_applied` exactly once for the applied command.
+- Confirmed Review Queue confirm action records a node review-status audit event through the existing status update path.
+- Confirmed manual node creation still records `manual_node_created` exactly once.
+- Confirmed manual edge creation still records `manual_edge_created` exactly once.
+- Confirmed Workspace JSON copy/import records `workspace_imported` and preserves imported audit events.
+- Confirmed EngineeringFlowInput import records `engineering_input_imported` and the event is visible in the no-graph Audit Log panel.
+- Confirmed Full AI Context import records `full_ai_context_imported`.
+- Confirmed audit history survives browser refresh after workspace restore.
+- Confirmed Audit Log panel, Add Manual Node UI, Add Manual Edge UI, Manual Context Summary, Lifecycle Progress Summary, AI-Native Context Export UI, and Local Command Import UI still work.
+
+Event coverage added:
+
+- `graph_generated`
+- `graph_replaced`
+- `workspace_imported`
+- `engineering_input_imported`
+- `full_ai_context_imported`
+
+Event coverage already present before this checkpoint:
+
+- `manual_node_created`
+- `manual_edge_created`
+- `ai_command_applied`
+- `node_review_status_changed`
+- `node_lifecycle_status_changed`
+- `edge_review_status_changed`
+- `edge_lifecycle_status_changed`
+
+Event coverage intentionally skipped:
+
+- Clear local workspace remains unaudited because it only clears saved local storage and leaves the open workspace unchanged.
+- Free-text inspector edits, type/relationship edits, and canvas position changes remain unaudited in this checkpoint to keep the polish focused on requested low-risk flows.
+- No separate Review Queue event path was added because review actions already flow through audited node/edge status handlers.
+
+Known limitations:
+
+- No undo/redo.
+- No command replay.
+- No conflict resolution.
+- No signed or tamper-proof audit trail.
+- No backend, database, auth, cloud sync, or remote collaboration.
+- No AI API, MCP server, or agent execution.
+- No canvas direct editing.
+- No drag-to-create.
+- No canvas lifecycle badges.
+- No lifecycle filters.
+- Full AI Context imports do not preserve prior audit history because the Full AI Context schema does not carry `auditLog`.
+
+Recommended next milestone:
+
+> Canvas Node Lifecycle Badges

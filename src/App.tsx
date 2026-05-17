@@ -35,6 +35,8 @@ function cloneInput(input: EngineeringFlowInput): EngineeringFlowInput {
   return structuredClone(input);
 }
 
+type ImportAuditEventType = "workspace_imported" | "full_ai_context_imported";
+
 export default function App() {
   const [restoredWorkspace] = useState(() => loadWorkspaceFromLocalStorage());
   const restoredSelection = getValidWorkspaceSelection(restoredWorkspace);
@@ -100,12 +102,14 @@ export default function App() {
   }
 
   function importEngineeringFlowInput(nextInput: EngineeringFlowInput) {
-    setEngineeringFlowInput({
+    const importedInput = {
       ...cloneInput(nextInput),
       updatedAt: nowIso(),
-    });
+    };
+
+    setEngineeringFlowInput(importedInput);
     setEngineeringFlowGraph(null);
-    setAuditLog([]);
+    setAuditLog([buildEngineeringInputImportedAuditEvent(importedInput)]);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
     setInputDirtySinceGeneration(false);
@@ -113,20 +117,31 @@ export default function App() {
     setAutosaveStatus("Input imported. Graph not generated yet.");
   }
 
-  function importWorkspaceDocument(workspace: EFlowWorkspaceDocument) {
+  function importWorkspaceDocument(
+    workspace: EFlowWorkspaceDocument,
+    importAuditEventType: ImportAuditEventType = "workspace_imported",
+  ) {
     const normalizedAuditLog = trimAuditLog(workspace.auditLog ?? []);
+    const nextAuditLog = appendAuditEvent(
+      normalizedAuditLog,
+      buildWorkspaceImportedAuditEvent(
+        workspace,
+        normalizedAuditLog.length,
+        importAuditEventType,
+      ),
+    );
     const normalizedWorkspace: EFlowWorkspaceDocument = {
       ...workspace,
-      auditLog: normalizedAuditLog,
+      auditLog: nextAuditLog,
     };
-    const selection = getValidWorkspaceSelection(workspace);
+    const selection = getValidWorkspaceSelection(normalizedWorkspace);
     setEngineeringFlowInput(cloneInput(normalizedWorkspace.engineeringFlowInput));
     setEngineeringFlowGraph(
       normalizedWorkspace.engineeringFlowGraph
         ? structuredClone(normalizedWorkspace.engineeringFlowGraph)
         : null,
     );
-    setAuditLog(normalizedAuditLog);
+    setAuditLog(nextAuditLog);
     setSelectedNodeId(selection.nodeId);
     setSelectedEdgeId(selection.edgeId);
     setInputDirtySinceGeneration(false);
@@ -142,7 +157,7 @@ export default function App() {
       selectedNodeId: null,
       selectedEdgeId: null,
     });
-    importWorkspaceDocument(workspace);
+    importWorkspaceDocument(workspace, "full_ai_context_imported");
     setAutosaveStatus("Full AI Context imported as workspace");
   }
 
@@ -157,8 +172,11 @@ export default function App() {
   }
 
   function replaceGraph() {
-    setEngineeringFlowGraph(generateEngineeringFlow(engineeringFlowInput));
-    setAuditLog([]);
+    const previousGraph = engineeringFlowGraph;
+    const nextGraph = generateEngineeringFlow(engineeringFlowInput);
+
+    setEngineeringFlowGraph(nextGraph);
+    setAuditLog([buildGraphGeneratedAuditEvent(engineeringFlowInput, nextGraph, previousGraph)]);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
     setInputDirtySinceGeneration(false);
@@ -327,6 +345,126 @@ function getValidWorkspaceSelection(workspace: EFlowWorkspaceDocument | null): {
   }
 
   return { nodeId: null, edgeId: null };
+}
+
+function buildGraphGeneratedAuditEvent(
+  input: EngineeringFlowInput,
+  graph: EngineeringFlowGraph,
+  previousGraph: EngineeringFlowGraph | null,
+): EFlowAuditEvent {
+  const isReplacement = Boolean(previousGraph);
+  const eventType = isReplacement ? "graph_replaced" : "graph_generated";
+  const action = isReplacement ? "Replaced" : "Generated";
+
+  return createAuditEvent({
+    actor: {
+      type: "human",
+      id: "local-user",
+      name: "Local user",
+    },
+    source: "manual_ui",
+    eventType,
+    summary: `${action} engineering graph with ${graph.nodes.length} nodes and ${graph.edges.length} edges.`,
+    target: {
+      type: "graph",
+      id: graph.id,
+    },
+    before: previousGraph ? buildGraphAuditSnapshot(previousGraph) : undefined,
+    after: buildGraphAuditSnapshot(graph),
+    metadata: {
+      nodeCount: graph.nodes.length,
+      edgeCount: graph.edges.length,
+      sourceInputId: graph.sourceInputId,
+      projectName: input.projectName,
+      previousGraphId: previousGraph?.id,
+      previousNodeCount: previousGraph?.nodes.length,
+      previousEdgeCount: previousGraph?.edges.length,
+    },
+  });
+}
+
+function buildEngineeringInputImportedAuditEvent(
+  input: EngineeringFlowInput,
+): EFlowAuditEvent {
+  return createAuditEvent({
+    actor: {
+      type: "human",
+      id: "local-user",
+      name: "Local user",
+    },
+    source: "workspace",
+    eventType: "engineering_input_imported",
+    summary: `Imported EngineeringFlowInput "${input.projectName}".`,
+    target: {
+      type: "workspace",
+      id: input.id,
+    },
+    after: {
+      projectName: input.projectName,
+      nodeCount: 0,
+      edgeCount: 0,
+      importedAuditEventCount: 0,
+    },
+    metadata: {
+      projectName: input.projectName,
+      nodeCount: 0,
+      edgeCount: 0,
+      importedAuditEventCount: 0,
+      sourceInputId: input.id,
+      sourceSchemaVersion: input.schemaVersion,
+    },
+  });
+}
+
+function buildWorkspaceImportedAuditEvent(
+  workspace: EFlowWorkspaceDocument,
+  importedAuditEventCount: number,
+  eventType: ImportAuditEventType,
+): EFlowAuditEvent {
+  const graph = workspace.engineeringFlowGraph;
+  const projectName = workspace.engineeringFlowInput.projectName || workspace.workspaceName;
+  const nodeCount = graph?.nodes.length ?? 0;
+  const edgeCount = graph?.edges.length ?? 0;
+  const sourceLabel =
+    eventType === "full_ai_context_imported" ? "Full AI Context" : "workspace";
+
+  return createAuditEvent({
+    actor: {
+      type: "human",
+      id: "local-user",
+      name: "Local user",
+    },
+    source: "workspace",
+    eventType,
+    summary: `Imported ${sourceLabel} "${projectName}" with ${nodeCount} nodes and ${edgeCount} edges.`,
+    target: {
+      type: "workspace",
+      id: workspace.engineeringFlowInput.id,
+    },
+    after: {
+      projectName,
+      nodeCount,
+      edgeCount,
+      importedAuditEventCount,
+    },
+    metadata: {
+      projectName,
+      nodeCount,
+      edgeCount,
+      importedAuditEventCount,
+      sourceInputId: workspace.engineeringFlowInput.id,
+      sourceWorkspaceSchemaVersion: workspace.schemaVersion,
+    },
+  });
+}
+
+function buildGraphAuditSnapshot(graph: EngineeringFlowGraph): Record<string, unknown> {
+  return {
+    graphId: graph.id,
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+    sourceInputId: graph.sourceInputId,
+  };
 }
 
 function buildNodeAuditEvents(
