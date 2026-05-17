@@ -1,11 +1,13 @@
 import { nowIso } from "./dates";
 import {
   EFLOW_AUDIT_ACTOR_TYPES,
+  EFLOW_AUDIT_EVENT_TYPES,
   EFLOW_AUDIT_SCHEMA_VERSION,
   EFLOW_AUDIT_SOURCES,
   EFLOW_AUDIT_TARGET_TYPES,
   type EFlowAuditActorType,
   type EFlowAuditEvent,
+  type EFlowKnownAuditEventType,
   type EFlowAuditSource,
   type EFlowAuditTargetType,
 } from "../types/eflowAudit";
@@ -26,6 +28,11 @@ export type AuditLogSummary = {
   recentEvents: EFlowAuditEvent[];
   byEventType: Record<string, number>;
   bySource: Record<EFlowAuditSource, number>;
+};
+
+export type AuditLogValidationResult = {
+  ok: boolean;
+  errors: string[];
 };
 
 let auditEventSequence = 0;
@@ -87,50 +94,108 @@ export function buildAuditLogSummary(
 }
 
 export function isEFlowAuditLog(value: unknown): value is EFlowAuditEvent[] {
-  return Array.isArray(value) && value.every(isEFlowAuditEvent);
+  return validateEFlowAuditLog(value).ok;
 }
 
 export function isEFlowAuditEvent(value: unknown): value is EFlowAuditEvent {
-  if (!isRecord(value)) return false;
-  if (value.schemaVersion !== EFLOW_AUDIT_SCHEMA_VERSION) return false;
-  if (typeof value.id !== "string" || !value.id) return false;
-  if (typeof value.createdAt !== "string" || !value.createdAt) return false;
-  if (typeof value.eventType !== "string" || !value.eventType) return false;
-  if (typeof value.summary !== "string" || !value.summary) return false;
+  return validateEFlowAuditEvent(value).ok;
+}
+
+export function validateEFlowAuditLog(value: unknown): AuditLogValidationResult {
+  if (!Array.isArray(value)) {
+    return { ok: false, errors: ["auditLog must be an array when present."] };
+  }
+
+  const errors = value.flatMap((event, index) =>
+    validateEFlowAuditEvent(event, `auditLog[${index}]`).errors,
+  );
+
+  return { ok: errors.length === 0, errors };
+}
+
+export function validateEFlowAuditEvent(
+  value: unknown,
+  path = "auditLog event",
+): AuditLogValidationResult {
+  const errors: string[] = [];
+
+  if (!isRecord(value)) {
+    return { ok: false, errors: [`${path} must be an object.`] };
+  }
+
+  if (value.schemaVersion !== EFLOW_AUDIT_SCHEMA_VERSION) {
+    errors.push(`${path}.schemaVersion must be "${EFLOW_AUDIT_SCHEMA_VERSION}".`);
+  }
+
+  if (typeof value.id !== "string" || !value.id) {
+    errors.push(`${path}.id must be a non-empty string.`);
+  }
+
+  if (typeof value.createdAt !== "string" || !value.createdAt) {
+    errors.push(`${path}.createdAt must be a non-empty string.`);
+  }
+
+  if (typeof value.eventType !== "string" || !value.eventType) {
+    errors.push(`${path}.eventType must be a non-empty string.`);
+  } else if (!isKnownOrCompatibleEventType(value.eventType)) {
+    errors.push(`${path}.eventType must be a snake_case event name.`);
+  }
+
+  if (typeof value.summary !== "string" || !value.summary) {
+    errors.push(`${path}.summary must be a non-empty string.`);
+  }
 
   if (
     typeof value.source !== "string" ||
     !EFLOW_AUDIT_SOURCES.includes(value.source as EFlowAuditSource)
   ) {
-    return false;
+    errors.push(`${path}.source must be one of ${EFLOW_AUDIT_SOURCES.join(", ")}.`);
   }
 
-  if (!isRecord(value.actor)) return false;
-  if (
-    typeof value.actor.type !== "string" ||
-    !EFLOW_AUDIT_ACTOR_TYPES.includes(value.actor.type as EFlowAuditActorType)
-  ) {
-    return false;
+  if (!isRecord(value.actor)) {
+    errors.push(`${path}.actor must be an object.`);
+  } else {
+    if (
+      typeof value.actor.type !== "string" ||
+      !EFLOW_AUDIT_ACTOR_TYPES.includes(value.actor.type as EFlowAuditActorType)
+    ) {
+      errors.push(`${path}.actor.type must be one of ${EFLOW_AUDIT_ACTOR_TYPES.join(", ")}.`);
+    }
+    if (typeof value.actor.id !== "string" || !value.actor.id) {
+      errors.push(`${path}.actor.id must be a non-empty string.`);
+    }
+    if (value.actor.name !== undefined && typeof value.actor.name !== "string") {
+      errors.push(`${path}.actor.name must be a string when provided.`);
+    }
   }
-  if (typeof value.actor.id !== "string" || !value.actor.id) return false;
-  if (value.actor.name !== undefined && typeof value.actor.name !== "string") return false;
 
   if (value.target !== undefined) {
-    if (!isRecord(value.target)) return false;
-    if (
-      typeof value.target.type !== "string" ||
-      !EFLOW_AUDIT_TARGET_TYPES.includes(value.target.type as EFlowAuditTargetType)
-    ) {
-      return false;
+    if (!isRecord(value.target)) {
+      errors.push(`${path}.target must be an object when provided.`);
+    } else {
+      if (
+        typeof value.target.type !== "string" ||
+        !EFLOW_AUDIT_TARGET_TYPES.includes(value.target.type as EFlowAuditTargetType)
+      ) {
+        errors.push(`${path}.target.type must be one of ${EFLOW_AUDIT_TARGET_TYPES.join(", ")}.`);
+      }
+      if (value.target.id !== undefined && typeof value.target.id !== "string") {
+        errors.push(`${path}.target.id must be a string when provided.`);
+      }
     }
-    if (value.target.id !== undefined && typeof value.target.id !== "string") return false;
   }
 
-  if (value.before !== undefined && !isRecord(value.before)) return false;
-  if (value.after !== undefined && !isRecord(value.after)) return false;
-  if (value.metadata !== undefined && !isRecord(value.metadata)) return false;
+  if (value.before !== undefined && !isRecord(value.before)) {
+    errors.push(`${path}.before must be an object when provided.`);
+  }
+  if (value.after !== undefined && !isRecord(value.after)) {
+    errors.push(`${path}.after must be an object when provided.`);
+  }
+  if (value.metadata !== undefined && !isRecord(value.metadata)) {
+    errors.push(`${path}.metadata must be an object when provided.`);
+  }
 
-  return true;
+  return { ok: errors.length === 0, errors };
 }
 
 function makeAuditEventId(eventType: string, createdAt: string): string {
@@ -172,6 +237,13 @@ function makeEmptySourceCounts(): Record<EFlowAuditSource, number> {
 function getEventTime(event: EFlowAuditEvent): number {
   const time = new Date(event.createdAt).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+function isKnownOrCompatibleEventType(eventType: string): boolean {
+  return (
+    EFLOW_AUDIT_EVENT_TYPES.includes(eventType as EFlowKnownAuditEventType) ||
+    /^[a-z][a-z0-9_]*$/.test(eventType)
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

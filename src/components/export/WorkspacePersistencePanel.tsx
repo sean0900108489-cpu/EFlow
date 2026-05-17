@@ -6,10 +6,9 @@ import type {
 } from "../../types/engineeringFlow";
 import { makeWorkspaceFilename } from "../../lib/workspacePersistence";
 import {
-  isEFlowWorkspaceDocument,
   isEngineeringFlowInput,
   isFullAIContext,
-  validateEngineeringFlowGraph,
+  validateEFlowWorkspaceDocument,
 } from "../../lib/workspaceValidation";
 import { CopyJsonButton } from "./CopyJsonButton";
 
@@ -59,26 +58,12 @@ export function WorkspacePersistencePanel({
       const schemaVersion = parsedRecord.schemaVersion;
 
       if (schemaVersion === "eflow-workspace/v0.3") {
-        if (!parsedRecord.engineeringFlowInput) {
-          throw new Error("Workspace is missing engineeringFlowInput.");
+        const workspaceValidation = validateEFlowWorkspaceDocument(parsed);
+        if (!workspaceValidation.ok) {
+          throw new Error(formatValidationErrors("Workspace import rejected", workspaceValidation.errors));
         }
 
-        if (!isEngineeringFlowInput(parsedRecord.engineeringFlowInput)) {
-          throw new Error("Workspace has an invalid engineeringFlowInput.");
-        }
-
-        if (parsedRecord.engineeringFlowGraph !== null) {
-          const graphValidation = validateEngineeringFlowGraph(parsedRecord.engineeringFlowGraph);
-          if (!graphValidation.ok) {
-            throw new Error(graphValidation.errors.join(" "));
-          }
-        }
-
-        if (!isEFlowWorkspaceDocument(parsed)) {
-          throw new Error("Workspace document is missing required metadata.");
-        }
-
-        onImportWorkspace(parsed);
+        onImportWorkspace(parsed as EFlowWorkspaceDocument);
         setMessage({ type: "success", text: "Workspace JSON imported." });
         return;
       }
@@ -157,4 +142,12 @@ export function WorkspacePersistencePanel({
       </button>
     </section>
   );
+}
+
+function formatValidationErrors(prefix: string, errors: string[]): string {
+  const visibleErrors = errors.slice(0, 4).join(" ");
+  const remainingCount = errors.length - 4;
+  const suffix = remainingCount > 0 ? ` ${remainingCount} more issue${remainingCount === 1 ? "" : "s"}.` : "";
+
+  return `${prefix}: ${visibleErrors}${suffix}`;
 }

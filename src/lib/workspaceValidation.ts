@@ -10,9 +10,9 @@ import type {
   SourceType,
 } from "../types/engineeringFlow";
 import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../types/eflowCommand";
-import { isEFlowAuditLog } from "./auditLog";
+import { validateEFlowAuditLog } from "./auditLog";
 
-type ValidationResult = {
+export type ValidationResult = {
   ok: boolean;
   errors: string[];
 };
@@ -88,29 +88,67 @@ export function isFullAIContext(value: unknown): value is FullAIContext {
 }
 
 export function isEFlowWorkspaceDocument(value: unknown): value is EFlowWorkspaceDocument {
-  if (!isRecord(value)) return false;
-  if (value.schemaVersion !== "eflow-workspace/v0.3") return false;
-  if (value.appVersion !== "0.3") return false;
-  if (typeof value.savedAt !== "string") return false;
-  if (typeof value.workspaceName !== "string") return false;
-  if (!isEngineeringFlowInput(value.engineeringFlowInput)) return false;
-  if (
-    value.engineeringFlowGraph !== null &&
-    !isEngineeringFlowGraph(value.engineeringFlowGraph)
-  ) {
-    return false;
-  }
-  if (value.selectedNodeId !== undefined && value.selectedNodeId !== null && typeof value.selectedNodeId !== "string") {
-    return false;
-  }
-  if (value.selectedEdgeId !== undefined && value.selectedEdgeId !== null && typeof value.selectedEdgeId !== "string") {
-    return false;
-  }
-  if (value.auditLog !== undefined && !isEFlowAuditLog(value.auditLog)) {
-    return false;
+  return validateEFlowWorkspaceDocument(value).ok;
+}
+
+export function validateEFlowWorkspaceDocument(value: unknown): ValidationResult {
+  const errors: string[] = [];
+
+  if (!isRecord(value)) {
+    return { ok: false, errors: ["Workspace document must be an object."] };
   }
 
-  return true;
+  if (value.schemaVersion !== "eflow-workspace/v0.3") {
+    errors.push('Workspace schemaVersion must be "eflow-workspace/v0.3".');
+  }
+
+  if (value.appVersion !== "0.3") {
+    errors.push('Workspace appVersion must be "0.3".');
+  }
+
+  if (typeof value.savedAt !== "string") {
+    errors.push("Workspace savedAt must be a string.");
+  }
+
+  if (typeof value.workspaceName !== "string") {
+    errors.push("Workspace workspaceName must be a string.");
+  }
+
+  if (!isEngineeringFlowInput(value.engineeringFlowInput)) {
+    errors.push("Workspace engineeringFlowInput is missing required fields.");
+  }
+
+  if (value.engineeringFlowGraph !== null) {
+    const graphValidation = validateEngineeringFlowGraph(value.engineeringFlowGraph);
+    if (!graphValidation.ok) {
+      errors.push(...graphValidation.errors);
+    }
+  }
+
+  if (
+    value.selectedNodeId !== undefined &&
+    value.selectedNodeId !== null &&
+    typeof value.selectedNodeId !== "string"
+  ) {
+    errors.push("Workspace selectedNodeId must be a string or null when provided.");
+  }
+
+  if (
+    value.selectedEdgeId !== undefined &&
+    value.selectedEdgeId !== null &&
+    typeof value.selectedEdgeId !== "string"
+  ) {
+    errors.push("Workspace selectedEdgeId must be a string or null when provided.");
+  }
+
+  if (value.auditLog !== undefined) {
+    const auditValidation = validateEFlowAuditLog(value.auditLog);
+    if (!auditValidation.ok) {
+      errors.push(...auditValidation.errors);
+    }
+  }
+
+  return { ok: errors.length === 0, errors };
 }
 
 export function validateEngineeringFlowGraph(value: unknown): ValidationResult {

@@ -6,6 +6,7 @@ import {
   createAuditEvent,
   MAX_AUDIT_LOG_EVENTS,
   trimAuditLog,
+  validateEFlowAuditLog,
 } from "../src/lib/auditLog";
 import {
   applyEFlowCommandToGraph,
@@ -30,6 +31,7 @@ import {
 import { buildWorkspaceDocument } from "../src/lib/workspacePersistence";
 import {
   isEFlowWorkspaceDocument,
+  validateEFlowWorkspaceDocument,
   validateEngineeringFlowGraph,
 } from "../src/lib/workspaceValidation";
 import {
@@ -325,6 +327,11 @@ assert.ok(
 );
 
 assert.ok(isEFlowWorkspaceDocument(workspace), "workspace document should validate");
+assert.deepEqual(
+  validateEFlowWorkspaceDocument(workspace),
+  { ok: true, errors: [] },
+  "workspace document should pass detailed workspace validation",
+);
 const parsedWorkspace = JSON.parse(JSON.stringify(workspace)) as unknown;
 assert.ok(isEFlowWorkspaceDocument(parsedWorkspace), "parsed workspace document should validate");
 
@@ -455,6 +462,11 @@ assert.ok(
   isEFlowWorkspaceDocument(parsedWorkspaceWithAuditLog),
   "parsed workspace with auditLog should validate",
 );
+assert.deepEqual(
+  validateEFlowAuditLog([auditEvent]),
+  { ok: true, errors: [] },
+  "valid auditLog should pass detailed audit validation",
+);
 const missingAuditLogWorkspace = {
   ...workspaceWithAuditLog,
 } as Record<string, unknown>;
@@ -462,6 +474,11 @@ delete missingAuditLogWorkspace.auditLog;
 assert.ok(
   isEFlowWorkspaceDocument(missingAuditLogWorkspace),
   "workspace validation should accept missing auditLog for backward compatibility",
+);
+assert.deepEqual(
+  validateEFlowWorkspaceDocument(missingAuditLogWorkspace),
+  { ok: true, errors: [] },
+  "detailed workspace validation should accept missing auditLog",
 );
 assert.deepEqual(
   workspace.auditLog,
@@ -480,6 +497,73 @@ assert.equal(
   }),
   false,
   "workspace validation should reject clearly invalid auditLog events",
+);
+assert.equal(
+  validateEFlowWorkspaceDocument({
+    ...workspaceWithAuditLog,
+    auditLog: { event: auditEvent },
+  }).ok,
+  false,
+  "workspace validation should reject non-array auditLog",
+);
+assert.equal(
+  validateEFlowWorkspaceDocument({
+    ...workspaceWithAuditLog,
+    auditLog: [{ ...auditEvent, source: "cloud" }],
+  }).ok,
+  false,
+  "workspace validation should reject invalid audit event source",
+);
+assert.equal(
+  validateEFlowWorkspaceDocument({
+    ...workspaceWithAuditLog,
+    auditLog: [{ ...auditEvent, actor: { type: "robot", id: "bad-actor" } }],
+  }).ok,
+  false,
+  "workspace validation should reject invalid audit event actor shape",
+);
+assert.equal(
+  validateEFlowWorkspaceDocument({
+    ...workspaceWithAuditLog,
+    auditLog: [{ ...auditEvent, eventType: "" }],
+  }).ok,
+  false,
+  "workspace validation should reject invalid audit eventType shape",
+);
+assert.ok(
+  validateEFlowWorkspaceDocument({
+    ...workspace,
+    engineeringFlowGraph: lifecycleMutationGraph,
+  }).ok,
+  "workspace validation should accept valid lifecycleStatus values",
+);
+assert.ok(
+  validateEFlowWorkspaceDocument(workspace).ok,
+  "workspace validation should accept missing lifecycleStatus values",
+);
+const invalidNodeLifecycleWorkspace = structuredClone(workspace);
+if (invalidNodeLifecycleWorkspace.engineeringFlowGraph) {
+  invalidNodeLifecycleWorkspace.engineeringFlowGraph.nodes[0] = {
+    ...invalidNodeLifecycleWorkspace.engineeringFlowGraph.nodes[0],
+    lifecycleStatus: "done",
+  } as unknown as typeof invalidNodeLifecycleWorkspace.engineeringFlowGraph.nodes[number];
+}
+assert.equal(
+  validateEFlowWorkspaceDocument(invalidNodeLifecycleWorkspace).ok,
+  false,
+  "workspace validation should reject invalid node lifecycleStatus",
+);
+const invalidEdgeLifecycleWorkspace = structuredClone(workspace);
+if (invalidEdgeLifecycleWorkspace.engineeringFlowGraph) {
+  invalidEdgeLifecycleWorkspace.engineeringFlowGraph.edges[0] = {
+    ...invalidEdgeLifecycleWorkspace.engineeringFlowGraph.edges[0],
+    lifecycleStatus: "done",
+  } as unknown as typeof invalidEdgeLifecycleWorkspace.engineeringFlowGraph.edges[number];
+}
+assert.equal(
+  validateEFlowWorkspaceDocument(invalidEdgeLifecycleWorkspace).ok,
+  false,
+  "workspace validation should reject invalid edge lifecycleStatus",
 );
 
 const targetNodeId = graph.nodes[0].id;
@@ -711,6 +795,81 @@ assert.equal(
   "manual edge insert should not mutate the original graph",
 );
 assert.equal(manualEdgeInsertResult.graph.edges.length, graph.edges.length + 1);
+
+const workspaceWithManualItems = buildWorkspaceDocument({
+  input: todoThoughtUniverseExample,
+  graph: manualEdgeInsertResult.graph,
+  selectedNodeId: manualNode.id,
+  selectedEdgeId: manualEdge.id,
+  auditLog: [auditEvent, secondAuditEvent],
+});
+assert.ok(
+  isEFlowWorkspaceDocument(workspaceWithManualItems),
+  "workspace with auditLog and manual items should validate",
+);
+const parsedWorkspaceWithManualItems = JSON.parse(
+  JSON.stringify(workspaceWithManualItems),
+) as typeof workspaceWithManualItems;
+assert.ok(
+  isEFlowWorkspaceDocument(parsedWorkspaceWithManualItems),
+  "workspace JSON with manual items should validate after parse",
+);
+const restoredManualNode = parsedWorkspaceWithManualItems.engineeringFlowGraph?.nodes.find(
+  (node) => node.id === manualNode.id,
+);
+const restoredManualEdge = parsedWorkspaceWithManualItems.engineeringFlowGraph?.edges.find(
+  (edge) => edge.id === manualEdge.id,
+);
+assert.equal(
+  restoredManualNode?.provenance.sourceType,
+  "manual_edit",
+  "manual node provenance should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualNode?.lifecycleStatus,
+  manualNode.lifecycleStatus,
+  "manual node lifecycleStatus should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualNode?.status,
+  manualNode.status,
+  "manual node review status should survive workspace JSON parse",
+);
+assert.deepEqual(
+  restoredManualNode?.position,
+  manualNode.position,
+  "manual node position should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualEdge?.provenance.sourceType,
+  "manual_edit",
+  "manual edge provenance should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualEdge?.lifecycleStatus,
+  manualEdge.lifecycleStatus,
+  "manual edge lifecycleStatus should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualEdge?.status,
+  manualEdge.status,
+  "manual edge review status should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualEdge?.source,
+  manualEdge.source,
+  "manual edge source should survive workspace JSON parse",
+);
+assert.equal(
+  restoredManualEdge?.target,
+  manualEdge.target,
+  "manual edge target should survive workspace JSON parse",
+);
+assert.deepEqual(
+  parsedWorkspaceWithManualItems.auditLog?.map((event) => event.id),
+  [auditEvent.id, secondAuditEvent.id],
+  "workspace auditLog should survive workspace JSON parse",
+);
 
 const insertedManualSummary = buildManualEditSummary(manualEdgeInsertResult.graph);
 assert.equal(insertedManualSummary.manualNodeCount, 1, "manual summary should count one manual node");

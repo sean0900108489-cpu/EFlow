@@ -1052,3 +1052,76 @@ Known limitations:
 Recommended next milestone:
 
 > Workspace / Import / Audit Hardening
+
+## Completed Checkpoint: Workspace / Import / Audit Hardening
+
+This checkpoint hardens local workspace, import, audit, lifecycle, and manual graph item compatibility without adding new product features.
+
+Files changed:
+
+- `src/lib/auditLog.ts`
+- `src/lib/workspaceValidation.ts`
+- `src/components/export/WorkspacePersistencePanel.tsx`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Hardened:
+
+- Added detailed result-style audit log validation while preserving existing boolean type guard behavior.
+- Added detailed result-style workspace document validation while preserving existing boolean type guard behavior.
+- Workspace validation still accepts missing `auditLog` for older local workspaces.
+- Workspace validation requires `auditLog` to be an array when present.
+- Audit validation rejects invalid `schemaVersion`, invalid `source`, invalid `actor`, invalid `target`, invalid event shape, and invalid metadata/snapshot shapes.
+- Workspace validation still accepts missing node/edge `lifecycleStatus`.
+- Workspace validation accepts supported node/edge `lifecycleStatus` values and rejects unsupported values.
+- Workspace import UI now reports specific workspace validation errors instead of a generic metadata failure.
+- Workspace export/import continues to preserve manual nodes, manual edges, and local audit history.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Loaded Todo Thought Universe example and generated the engineering flow.
+- Added a manual node and confirmed `manual_node_created` audit coverage.
+- Added a manual edge and confirmed `manual_edge_created` audit coverage.
+- Copied Workspace JSON and confirmed manual node, manual edge, and `auditLog` were included.
+- Imported the copied Workspace JSON and confirmed manual node, manual edge, imported audit history, and appended `workspace_imported` event survived.
+- Refreshed the browser and confirmed local workspace restore preserved manual node, manual edge, and audit history.
+- Confirmed lifecycle filters still work.
+- Confirmed canvas node lifecycle badges still render.
+- Confirmed AI-Native Context Export UI still exists.
+- Confirmed Local Command Import UI still exists.
+- Confirmed invalid workspace import with invalid `lifecycleStatus` is safely rejected.
+- Confirmed invalid workspace import with invalid `auditLog` is safely rejected.
+
+Compatibility behavior:
+
+- Missing `auditLog` remains valid and restores as an empty local audit history in app state.
+- Missing graph item `lifecycleStatus` remains valid and is not written back just to fill defaults.
+- Existing display/export paths continue to treat missing lifecycle state as `planned` where already designed.
+- Manual graph items preserve `provenance.sourceType = "manual_edit"`, lifecycle status, review status, title/description, position, and relationships through Workspace JSON export/import and local restore.
+- Workspace JSON import preserves imported audit events and appends a compact `workspace_imported` event without losing the imported history.
+- EFlow Context export remains AI project context and does not gain workspace `auditLog`.
+
+Known limitations:
+
+- No undo/redo.
+- No command replay.
+- No conflict resolution.
+- No signed or tamper-proof audit trail.
+- No backend, database, auth, cloud sync, or remote collaboration.
+- No AI API, MCP server, or agent execution.
+- No canvas direct editing.
+- No drag-to-create.
+- Edge lifecycle badges are not implemented.
+- Edge lifecycle filters are not implemented.
+- Deployment/release docs are still pending.
+
+Recommended next milestone:
+
+> AI Context / Command Interop Polish
