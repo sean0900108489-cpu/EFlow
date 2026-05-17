@@ -514,3 +514,52 @@ Known limitations:
 Recommended next milestone:
 
 > Manual Graph Editing Headless Helpers
+
+## Completed Checkpoint: Manual Graph Editing Headless Helpers
+
+This checkpoint adds local-first helper functions for manually creating and inserting graph items without adding any UI.
+
+Files changed:
+
+- `src/lib/manualGraphEditing.ts`
+- `src/types/engineeringFlow.ts`
+- `src/lib/buildEflowContextExport.ts`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `createManualNode` for creating `manual_edit` graph nodes.
+- Added `createManualEdge` for creating `manual_edit` graph edges.
+- Added `insertManualNode` for immutable manual node insertion.
+- Added `insertManualEdge` for immutable manual edge insertion.
+- Manual nodes default to legacy review `status: "confirmed"` and `lifecycleStatus: "planned"`.
+- Manual edges default to legacy review `status: "confirmed"` and `lifecycleStatus: "planned"`.
+- Manual provenance uses `sourceType: "manual_edit"`, empty `sourceInputIds`, and human-added generation rules.
+- Insert helpers fail safely with result objects and clear error codes.
+- Manual node insertion rejects duplicate node ids.
+- Manual edge insertion rejects duplicate edge ids, missing sources, missing targets, self-edges, and duplicate exact edges.
+- EFlow Context export preserves manual node `sourceInputIds` and includes inserted manual graph items because they are part of `EngineeringFlowGraph`.
+- Existing command import behavior, graph generation, persistence, lifecycle summary, and UI surfaces were not changed.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Not required / not run because this is a headless-only helper milestone. The app still builds successfully.
+
+Known limitations:
+
+- No manual node UI yet.
+- No manual edge UI yet.
+- No canvas editing UI yet.
+- No canvas lifecycle badges.
+- No lifecycle filters.
+
+Recommended next milestone:
+
+> Add Manual Node UI

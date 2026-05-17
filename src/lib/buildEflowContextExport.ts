@@ -132,7 +132,9 @@ function toContextEdge(edge: EngineeringEdge): EFlowCommandEdge {
 function toNodeProvenance(node: EngineeringNode): EFlowProvenance {
   return {
     sourceType: node.provenance.sourceType,
-    sourceInputIds: node.provenance.sourceInputId ? [node.provenance.sourceInputId] : undefined,
+    sourceInputIds:
+      node.provenance.sourceInputIds ??
+      (node.provenance.sourceInputId ? [node.provenance.sourceInputId] : undefined),
     generationRule: node.provenance.generationRule,
     commandId: node.provenance.commandId,
     actorId: node.provenance.actorId,

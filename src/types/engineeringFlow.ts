@@ -121,6 +121,7 @@ export type EngineeringNode = {
     sourceType: SourceType;
     sourceInputSection?: string;
     sourceInputId?: string;
+    sourceInputIds?: string[];
     generationRule?: string;
     commandId?: string;
     actorId?: string;

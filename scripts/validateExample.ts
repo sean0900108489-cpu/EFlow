@@ -12,6 +12,12 @@ import {
 } from "../src/lib/eflowCommandValidation";
 import { buildFullAIContext } from "../src/lib/exportContext";
 import { generateEngineeringFlow } from "../src/lib/generateEngineeringFlow";
+import {
+  createManualEdge,
+  createManualNode,
+  insertManualEdge,
+  insertManualNode,
+} from "../src/lib/manualGraphEditing";
 import { buildWorkspaceDocument } from "../src/lib/workspacePersistence";
 import {
   isEFlowWorkspaceDocument,
@@ -326,6 +332,172 @@ assert.ok(
 assert.ok(
   appliedEflowContext.reviewSummary.nodesByReviewStatus.confirmed.includes(targetNodeId),
   "confirmed node should appear in review summary",
+);
+
+const manualNode = createManualNode({
+  id: "node-manual-validation",
+  type: "feature",
+  title: "Manual Validation Node",
+  description: "A manually added node for headless graph editing validation.",
+  position: {
+    x: 2520,
+    y: 0,
+  },
+});
+assert.equal(manualNode.id, "node-manual-validation");
+assert.equal(manualNode.provenance.sourceType, "manual_edit");
+assert.deepEqual(manualNode.provenance.sourceInputIds, []);
+assert.equal(manualNode.provenance.generationRule, "human_added_node");
+assert.equal(manualNode.status, "confirmed", "manual node should default to confirmed review status");
+assert.equal(
+  manualNode.lifecycleStatus,
+  "planned",
+  "manual node should default to planned lifecycleStatus",
+);
+
+const manualNodeInsertResult = insertManualNode(graph, manualNode);
+assert.ok(manualNodeInsertResult.ok, "manual node insert should succeed");
+assert.notStrictEqual(
+  manualNodeInsertResult.graph,
+  graph,
+  "manual node insert should return a new graph object",
+);
+assert.equal(
+  graph.nodes.some((node) => node.id === manualNode.id),
+  false,
+  "manual node insert should not mutate the original graph",
+);
+assert.equal(manualNodeInsertResult.graph.nodes.length, graph.nodes.length + 1);
+assert.ok(
+  manualNodeInsertResult.graph.nodes.some((node) => node.id === manualNode.id),
+  "inserted manual node should be present in the new graph",
+);
+
+const duplicateManualNodeResult = insertManualNode(manualNodeInsertResult.graph, manualNode);
+assert.equal(duplicateManualNodeResult.ok, false, "duplicate manual node id should fail");
+assert.strictEqual(
+  duplicateManualNodeResult.graph,
+  manualNodeInsertResult.graph,
+  "failed manual node insert should return the original graph object",
+);
+assert.ok(
+  duplicateManualNodeResult.errors.some((error) => error.code === "graph.duplicate_node"),
+  "duplicate manual node id should report graph.duplicate_node",
+);
+
+const manualEdge = createManualEdge({
+  id: "edge-manual-validation",
+  source: targetNodeId,
+  target: manualNode.id,
+  relationshipType: "relates_to",
+  description: "Manual validation edge for headless graph editing.",
+});
+assert.equal(manualEdge.id, "edge-manual-validation");
+assert.equal(manualEdge.provenance.sourceType, "manual_edit");
+assert.deepEqual(manualEdge.provenance.sourceInputIds, []);
+assert.equal(manualEdge.provenance.generationRule, "human_added_edge");
+assert.equal(manualEdge.status, "confirmed", "manual edge should default to confirmed review status");
+assert.equal(
+  manualEdge.lifecycleStatus,
+  "planned",
+  "manual edge should default to planned lifecycleStatus",
+);
+
+const missingSourceManualEdgeResult = insertManualEdge(manualNodeInsertResult.graph, {
+  ...manualEdge,
+  id: "edge-manual-missing-source",
+  source: "node-does-not-exist",
+});
+assert.equal(missingSourceManualEdgeResult.ok, false, "manual edge missing source should fail");
+assert.ok(
+  missingSourceManualEdgeResult.errors.some((error) => error.code === "graph.edge_source_missing"),
+  "manual edge missing source should report graph.edge_source_missing",
+);
+
+const missingTargetManualEdgeResult = insertManualEdge(manualNodeInsertResult.graph, {
+  ...manualEdge,
+  id: "edge-manual-missing-target",
+  target: "node-does-not-exist",
+});
+assert.equal(missingTargetManualEdgeResult.ok, false, "manual edge missing target should fail");
+assert.ok(
+  missingTargetManualEdgeResult.errors.some((error) => error.code === "graph.edge_target_missing"),
+  "manual edge missing target should report graph.edge_target_missing",
+);
+
+const selfManualEdgeResult = insertManualEdge(manualNodeInsertResult.graph, {
+  ...manualEdge,
+  id: "edge-manual-self",
+  source: targetNodeId,
+  target: targetNodeId,
+});
+assert.equal(selfManualEdgeResult.ok, false, "manual self-edge should fail");
+assert.ok(
+  selfManualEdgeResult.errors.some((error) => error.code === "graph.self_edge"),
+  "manual self-edge should report graph.self_edge",
+);
+
+const duplicateExactManualEdgeResult = insertManualEdge(
+  manualNodeInsertResult.graph,
+  createManualEdge({
+    id: "edge-manual-duplicate-exact",
+    source: targetEdge.source,
+    target: targetEdge.target,
+    relationshipType: targetEdge.relationshipType,
+    description: "Duplicate exact edge validation.",
+  }),
+);
+assert.equal(duplicateExactManualEdgeResult.ok, false, "duplicate exact manual edge should fail");
+assert.ok(
+  duplicateExactManualEdgeResult.errors.some((error) => error.code === "graph.duplicate_exact_edge"),
+  "duplicate exact manual edge should report graph.duplicate_exact_edge",
+);
+
+const manualEdgeInsertResult = insertManualEdge(manualNodeInsertResult.graph, manualEdge);
+assert.ok(manualEdgeInsertResult.ok, "manual edge insert should succeed");
+assert.notStrictEqual(
+  manualEdgeInsertResult.graph,
+  manualNodeInsertResult.graph,
+  "manual edge insert should return a new graph object",
+);
+assert.equal(
+  manualNodeInsertResult.graph.edges.some((edge) => edge.id === manualEdge.id),
+  false,
+  "manual edge insert should not mutate the original graph",
+);
+assert.equal(manualEdgeInsertResult.graph.edges.length, graph.edges.length + 1);
+
+const duplicateManualEdgeIdResult = insertManualEdge(manualEdgeInsertResult.graph, {
+  ...manualEdge,
+  source: manualNode.id,
+  target: targetNodeId,
+});
+assert.equal(duplicateManualEdgeIdResult.ok, false, "duplicate manual edge id should fail");
+assert.ok(
+  duplicateManualEdgeIdResult.errors.some((error) => error.code === "graph.duplicate_edge"),
+  "duplicate manual edge id should report graph.duplicate_edge",
+);
+
+const manualEflowContext = buildEFlowContextExport({
+  engineeringFlowInput: todoThoughtUniverseExample,
+  engineeringFlowGraph: manualEdgeInsertResult.graph,
+  generatedAt: "2026-05-17T00:00:00.000Z",
+});
+assert.ok(
+  manualEflowContext.graph.nodes.some((node) => node.id === manualNode.id),
+  "inserted manual node should appear in EFlow context export",
+);
+assert.ok(
+  manualEflowContext.graph.edges.some((edge) => edge.id === manualEdge.id),
+  "inserted manual edge should appear in EFlow context export",
+);
+assert.ok(
+  manualEflowContext.reviewSummary.nodesByReviewStatus.confirmed.includes(manualNode.id),
+  "manual node should appear as confirmed in EFlow context review summary",
+);
+assert.ok(
+  manualEflowContext.progressSummary.edgesByLifecycle.planned.includes(manualEdge.id),
+  "manual edge should appear as planned in EFlow context progress summary",
 );
 
 const upsertCommand: EFlowCommandEnvelope = {
