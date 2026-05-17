@@ -269,6 +269,18 @@
   gap: 8px;
 }
 
+.provenance-badge {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 999px;
+  color: #1f5fd0;
+  background: var(--blue-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .import-section textarea {
   background: #fbfcff;
 }
@@ -606,25 +618,40 @@
   border-top: 1px solid var(--line);
 }
 
-.manual-node-panel {
+.manual-node-panel,
+.manual-edge-panel {
   display: grid;
   gap: 12px;
   padding-top: 6px;
   border-top: 1px solid var(--line);
 }
 
-.manual-node-form {
+.manual-node-form,
+.manual-edge-form {
   display: grid;
   gap: 10px;
 }
 
-.manual-node-actions {
+.manual-node-actions,
+.manual-edge-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.manual-node-message {
+.manual-edge-helper {
+  padding: 8px 10px;
+  border: 1px solid rgba(154, 101, 21, 0.18);
+  border-radius: 8px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.manual-node-message,
+.manual-edge-message {
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 0.82rem;
@@ -632,12 +659,14 @@
   line-height: 1.4;
 }
 
-.manual-node-message-success {
+.manual-node-message-success,
+.manual-edge-message-success {
   color: var(--green);
   background: var(--green-soft);
 }
 
-.manual-node-message-error {
+.manual-node-message-error,
+.manual-edge-message-error {
   color: var(--red);
   background: var(--red-soft);
 }

@@ -33,6 +33,9 @@ export function NodeInspector({ node, onChange }: NodeInspectorProps) {
           <p className="eyebrow">Node inspector</p>
           <h2>{node.title}</h2>
         </div>
+        {node.provenance.sourceType === "manual_edit" ? (
+          <span className="provenance-badge">Manual context</span>
+        ) : null}
       </div>
       <div className="inspector-quick-actions">
         <button className="mini-button" type="button" onClick={() => onChange({ status: "confirmed" })}>

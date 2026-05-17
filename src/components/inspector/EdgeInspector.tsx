@@ -33,6 +33,9 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
           <p className="eyebrow">Edge inspector</p>
           <h2>{edge.relationshipType}</h2>
         </div>
+        {edge.provenance.sourceType === "manual_edit" ? (
+          <span className="provenance-badge">Manual relationship</span>
+        ) : null}
       </div>
       <div className="inspector-quick-actions">
         <button className="mini-button" type="button" onClick={() => onChange({ status: "confirmed" })}>

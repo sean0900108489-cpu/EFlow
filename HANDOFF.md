@@ -618,3 +618,73 @@ Known limitations:
 Recommended next milestone:
 
 > Add Manual Edge UI
+
+## Completed Checkpoint: Add Manual Edge UI and Manual Provenance Polish
+
+This checkpoint adds a small local-first UI for creating manual graph edges and visual-only manual provenance badges in inspectors.
+
+Files changed:
+
+- `src/components/graphEditing/AddManualEdgePanel.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/components/inspector/NodeInspector.tsx`
+- `src/components/inspector/EdgeInspector.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `AddManualEdgePanel` for creating manual graph edges whenever an `EngineeringFlowGraph` exists.
+- Source and target nodes are selected from existing `graph.nodes` with simple native selects.
+- Relationship type choices are limited to the graph model's supported `RelationshipType` values: `serves`, `uses`, `leads_to`, `contains`, `depends_on`, `produces`, `needs_confirmation`, and `relates_to`.
+- The panel supports description, review status, and lifecycle status.
+- Defaults are `relationshipType: "relates_to"`, legacy review `status: "confirmed"`, and `lifecycleStatus: "planned"`.
+- Review status choices are intentionally limited to `confirmed` and `suggested`.
+- Lifecycle choices use the accepted lifecycle state list: `draft`, `planned`, `ready`, `developing`, `completed`, `blocked`, `needs_refactor`, and `deprecated`.
+- Manual edges are created with `createManualEdge` and inserted immutably with `insertManualEdge`.
+- Successful insertion replaces the graph state and selects the newly added edge through the existing app selection path.
+- The UI safely handles missing source, missing target, same source/target, empty descriptions, fewer than two nodes, duplicate exact edges, and helper failure results without throwing.
+- Manual edges appear on the canvas, in `EdgeInspector`, in lifecycle and review summaries, and in exports naturally because they are part of the current graph.
+- Workspace autosave and restore preserve manual edges through the existing workspace persistence path.
+- `NodeInspector` now shows a small visual-only `Manual context` badge for `manual_edit` nodes.
+- `EdgeInspector` now shows a small visual-only `Manual relationship` badge for `manual_edit` edges.
+- Existing review status controls and lifecycle status controls remain unchanged.
+- Existing graph generation, command import behavior, export behavior, and canvas editing behavior were not changed.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed in Safari against `http://127.0.0.1:5173`.
+- Confirmed Add Manual Node UI still appears and still works.
+- Confirmed Add Manual Edge UI appears after graph generation.
+- Added a manual edge with default `relates_to`, `confirmed`, and `planned` values.
+- Confirmed the manual edge appears on the canvas and is selectable.
+- Confirmed `EdgeInspector` shows the manual edge, including the `Manual relationship` badge, `manual_edit` provenance, and `human_added_edge` generation rule.
+- Confirmed a manual node shows the `Manual context` badge in `NodeInspector`.
+- Confirmed EngineeringFlowGraph export, EFlow Context export, and Workspace export include the manual edge.
+- Confirmed browser refresh restores the manual edge from local workspace persistence.
+- Confirmed duplicate exact edge creation is rejected safely.
+- Confirmed same source/target edge creation is rejected safely.
+- Confirmed existing inspector lifecycle controls still update lifecycle counts.
+- Confirmed Lifecycle Progress Summary updates edge counts.
+- Confirmed Local Command Import UI and AI-Native Context Export UI still exist.
+- Confirmed no canvas direct editing was added.
+
+Known limitations:
+
+- Canvas direct editing still not implemented.
+- Drag-to-create still not implemented.
+- Canvas lifecycle badges still not implemented.
+- Lifecycle filters still not implemented.
+- Command history/audit log still not implemented.
+
+Recommended next milestone:
+
+> Manual Editing Integration Polish
+
+Keep the next polish small and focused on integration fit and rough edges; it should not become a full visual graph editor.

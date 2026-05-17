@@ -8,6 +8,7 @@ import type {
 } from "../../types/engineeringFlow";
 import { LocalCommandImportPanel } from "../command/LocalCommandImportPanel";
 import { JsonExportPanel } from "../export/JsonExportPanel";
+import { AddManualEdgePanel } from "../graphEditing/AddManualEdgePanel";
 import { AddManualNodePanel } from "../graphEditing/AddManualNodePanel";
 import { LifecycleProgressSummary } from "../lifecycle/LifecycleProgressSummary";
 import { ReviewPanel } from "../review/ReviewPanel";
@@ -65,6 +66,11 @@ export function InspectorPanel({
           onApplyGraph={onReplaceGraph}
           onSelectNode={onSelectNode}
         />
+        <AddManualEdgePanel
+          graph={graph}
+          onApplyGraph={onReplaceGraph}
+          onSelectEdge={onSelectEdge}
+        />
         <ReviewPanel
           compact
           graph={graph}
@@ -99,6 +105,11 @@ export function InspectorPanel({
           graph={graph}
           onApplyGraph={onReplaceGraph}
           onSelectNode={onSelectNode}
+        />
+        <AddManualEdgePanel
+          graph={graph}
+          onApplyGraph={onReplaceGraph}
+          onSelectEdge={onSelectEdge}
         />
         <ReviewPanel
           compact
@@ -145,6 +156,11 @@ export function InspectorPanel({
           graph={graph}
           onApplyGraph={onReplaceGraph}
           onSelectNode={onSelectNode}
+        />
+        <AddManualEdgePanel
+          graph={graph}
+          onApplyGraph={onReplaceGraph}
+          onSelectEdge={onSelectEdge}
         />
         <ReviewPanel
           graph={graph}
