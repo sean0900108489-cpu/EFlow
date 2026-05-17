@@ -7,6 +7,11 @@ import { Workspace } from "./components/layout/Workspace";
 import { InspectorPanel } from "./components/inspector/InspectorPanel";
 import { emptyEngineeringFlowInput } from "./data/emptyEngineeringFlowInput";
 import { todoThoughtUniverseExample } from "./data/todoThoughtUniverseExample";
+import {
+  appendAuditEvent,
+  createAuditEvent,
+  trimAuditLog,
+} from "./lib/auditLog";
 import { nowIso } from "./lib/dates";
 import { generateEngineeringFlow } from "./lib/generateEngineeringFlow";
 import {
@@ -24,6 +29,7 @@ import type {
   EngineeringNode,
   FullAIContext,
 } from "./types/engineeringFlow";
+import type { EFlowAuditEvent } from "./types/eflowAudit";
 
 function cloneInput(input: EngineeringFlowInput): EngineeringFlowInput {
   return structuredClone(input);
@@ -37,6 +43,9 @@ export default function App() {
   );
   const [engineeringFlowGraph, setEngineeringFlowGraph] = useState<EngineeringFlowGraph | null>(() =>
     restoredWorkspace?.engineeringFlowGraph ? structuredClone(restoredWorkspace.engineeringFlowGraph) : null,
+  );
+  const [auditLog, setAuditLog] = useState<EFlowAuditEvent[]>(() =>
+    restoredWorkspace?.auditLog ? trimAuditLog(structuredClone(restoredWorkspace.auditLog)) : [],
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(restoredSelection.nodeId);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(restoredSelection.edgeId);
@@ -60,17 +69,19 @@ export default function App() {
         graph: engineeringFlowGraph,
         selectedNodeId,
         selectedEdgeId,
+        auditLog,
       });
       saveWorkspaceToLocalStorage(workspace);
       setAutosaveStatus(`Local workspace saved ${formatTime(workspace.savedAt)}`);
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [engineeringFlowInput, engineeringFlowGraph, selectedNodeId, selectedEdgeId]);
+  }, [engineeringFlowInput, engineeringFlowGraph, selectedNodeId, selectedEdgeId, auditLog]);
 
   function loadTodoThoughtUniverseExample() {
     setEngineeringFlowInput(cloneInput(todoThoughtUniverseExample));
     setEngineeringFlowGraph(null);
+    setAuditLog([]);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
     setInputDirtySinceGeneration(false);
@@ -94,6 +105,7 @@ export default function App() {
       updatedAt: nowIso(),
     });
     setEngineeringFlowGraph(null);
+    setAuditLog([]);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
     setInputDirtySinceGeneration(false);
@@ -102,17 +114,25 @@ export default function App() {
   }
 
   function importWorkspaceDocument(workspace: EFlowWorkspaceDocument) {
+    const normalizedAuditLog = trimAuditLog(workspace.auditLog ?? []);
+    const normalizedWorkspace: EFlowWorkspaceDocument = {
+      ...workspace,
+      auditLog: normalizedAuditLog,
+    };
     const selection = getValidWorkspaceSelection(workspace);
-    setEngineeringFlowInput(cloneInput(workspace.engineeringFlowInput));
+    setEngineeringFlowInput(cloneInput(normalizedWorkspace.engineeringFlowInput));
     setEngineeringFlowGraph(
-      workspace.engineeringFlowGraph ? structuredClone(workspace.engineeringFlowGraph) : null,
+      normalizedWorkspace.engineeringFlowGraph
+        ? structuredClone(normalizedWorkspace.engineeringFlowGraph)
+        : null,
     );
+    setAuditLog(normalizedAuditLog);
     setSelectedNodeId(selection.nodeId);
     setSelectedEdgeId(selection.edgeId);
     setInputDirtySinceGeneration(false);
     setShowRegenerationConfirm(false);
-    saveWorkspaceToLocalStorage(workspace);
-    setAutosaveStatus(`Imported workspace ${formatTime(workspace.savedAt)}`);
+    saveWorkspaceToLocalStorage(normalizedWorkspace);
+    setAutosaveStatus(`Imported workspace ${formatTime(normalizedWorkspace.savedAt)}`);
   }
 
   function importFullAIContext(context: FullAIContext) {
@@ -138,6 +158,7 @@ export default function App() {
 
   function replaceGraph() {
     setEngineeringFlowGraph(generateEngineeringFlow(engineeringFlowInput));
+    setAuditLog([]);
     setSelectedNodeId(null);
     setSelectedEdgeId(null);
     setInputDirtySinceGeneration(false);
@@ -158,31 +179,54 @@ export default function App() {
   }
 
   function updateNode(nodeId: string, patch: Partial<EngineeringNode>) {
-    setEngineeringFlowGraph((graph) => {
-      if (!graph) return graph;
+    if (!engineeringFlowGraph) return;
+    const currentNode = engineeringFlowGraph.nodes.find((node) => node.id === nodeId);
+    if (!currentNode) return;
 
-      return {
-        ...graph,
-        updatedAt: nowIso(),
-        nodes: graph.nodes.map((node) => (node.id === nodeId ? { ...node, ...patch } : node)),
-      };
+    const nextNode = { ...currentNode, ...patch };
+    setEngineeringFlowGraph({
+      ...engineeringFlowGraph,
+      updatedAt: nowIso(),
+      nodes: engineeringFlowGraph.nodes.map((node) =>
+        node.id === nodeId ? nextNode : node,
+      ),
     });
+    recordAuditEvents(buildNodeAuditEvents(currentNode, nextNode, patch));
   }
 
   function updateEdge(edgeId: string, patch: Partial<EngineeringEdge>) {
-    setEngineeringFlowGraph((graph) => {
-      if (!graph) return graph;
+    if (!engineeringFlowGraph) return;
+    const currentEdge = engineeringFlowGraph.edges.find((edge) => edge.id === edgeId);
+    if (!currentEdge) return;
 
-      return {
-        ...graph,
-        updatedAt: nowIso(),
-        edges: graph.edges.map((edge) => (edge.id === edgeId ? { ...edge, ...patch } : edge)),
-      };
+    const nextEdge = { ...currentEdge, ...patch };
+    setEngineeringFlowGraph({
+      ...engineeringFlowGraph,
+      updatedAt: nowIso(),
+      edges: engineeringFlowGraph.edges.map((edge) =>
+        edge.id === edgeId ? nextEdge : edge,
+      ),
     });
+    recordAuditEvents(buildEdgeAuditEvents(currentEdge, nextEdge, patch));
   }
 
   function replaceGraphFromCommand(nextGraph: EngineeringFlowGraph) {
     setEngineeringFlowGraph(nextGraph);
+  }
+
+  function recordAuditEvent(event: EFlowAuditEvent) {
+    setAuditLog((currentAuditLog) => appendAuditEvent(currentAuditLog, event));
+  }
+
+  function recordAuditEvents(events: EFlowAuditEvent[]) {
+    if (events.length === 0) return;
+
+    setAuditLog((currentAuditLog) =>
+      events.reduce(
+        (nextAuditLog, event) => appendAuditEvent(nextAuditLog, event),
+        currentAuditLog,
+      ),
+    );
   }
 
   function updateNodePosition(nodeId: string, position: { x: number; y: number }) {
@@ -246,12 +290,14 @@ export default function App() {
             graph={engineeringFlowGraph}
             selectedNodeId={selectedNodeId}
             selectedEdgeId={selectedEdgeId}
+            auditLog={auditLog}
             autosaveStatus={autosaveStatus}
             onSelectNode={selectNode}
             onSelectEdge={selectEdge}
             onUpdateNode={updateNode}
             onUpdateEdge={updateEdge}
             onReplaceGraph={replaceGraphFromCommand}
+            onRecordAuditEvent={recordAuditEvent}
             onImportWorkspace={importWorkspaceDocument}
             onImportFullContext={importFullAIContext}
             onImportInput={importEngineeringFlowInput}
@@ -281,6 +327,150 @@ function getValidWorkspaceSelection(workspace: EFlowWorkspaceDocument | null): {
   }
 
   return { nodeId: null, edgeId: null };
+}
+
+function buildNodeAuditEvents(
+  currentNode: EngineeringNode,
+  nextNode: EngineeringNode,
+  patch: Partial<EngineeringNode>,
+): EFlowAuditEvent[] {
+  const events: EFlowAuditEvent[] = [];
+
+  if (patch.status !== undefined && currentNode.status !== nextNode.status) {
+    events.push(
+      createAuditEvent({
+        actor: {
+          type: "human",
+          id: "local-user",
+          name: "Local user",
+        },
+        source: "manual_ui",
+        eventType: "node_review_status_changed",
+        summary: `Changed node "${currentNode.title}" review status from ${currentNode.status} to ${nextNode.status}.`,
+        target: {
+          type: "node",
+          id: currentNode.id,
+        },
+        before: {
+          reviewStatus: currentNode.status,
+        },
+        after: {
+          reviewStatus: nextNode.status,
+        },
+        metadata: {
+          field: "status",
+          legacyFieldMeaning: "review_status",
+        },
+      }),
+    );
+  }
+
+  const currentLifecycleStatus = currentNode.lifecycleStatus ?? "planned";
+  const nextLifecycleStatus = nextNode.lifecycleStatus ?? "planned";
+  if (
+    patch.lifecycleStatus !== undefined &&
+    currentLifecycleStatus !== nextLifecycleStatus
+  ) {
+    events.push(
+      createAuditEvent({
+        actor: {
+          type: "human",
+          id: "local-user",
+          name: "Local user",
+        },
+        source: "manual_ui",
+        eventType: "node_lifecycle_status_changed",
+        summary: `Changed node "${currentNode.title}" lifecycle status from ${currentLifecycleStatus} to ${nextLifecycleStatus}.`,
+        target: {
+          type: "node",
+          id: currentNode.id,
+        },
+        before: {
+          lifecycleStatus: currentLifecycleStatus,
+        },
+        after: {
+          lifecycleStatus: nextLifecycleStatus,
+        },
+        metadata: {
+          field: "lifecycleStatus",
+        },
+      }),
+    );
+  }
+
+  return events;
+}
+
+function buildEdgeAuditEvents(
+  currentEdge: EngineeringEdge,
+  nextEdge: EngineeringEdge,
+  patch: Partial<EngineeringEdge>,
+): EFlowAuditEvent[] {
+  const events: EFlowAuditEvent[] = [];
+
+  if (patch.status !== undefined && currentEdge.status !== nextEdge.status) {
+    events.push(
+      createAuditEvent({
+        actor: {
+          type: "human",
+          id: "local-user",
+          name: "Local user",
+        },
+        source: "manual_ui",
+        eventType: "edge_review_status_changed",
+        summary: `Changed edge "${currentEdge.id}" review status from ${currentEdge.status} to ${nextEdge.status}.`,
+        target: {
+          type: "edge",
+          id: currentEdge.id,
+        },
+        before: {
+          reviewStatus: currentEdge.status,
+        },
+        after: {
+          reviewStatus: nextEdge.status,
+        },
+        metadata: {
+          field: "status",
+          legacyFieldMeaning: "review_status",
+        },
+      }),
+    );
+  }
+
+  const currentLifecycleStatus = currentEdge.lifecycleStatus ?? "planned";
+  const nextLifecycleStatus = nextEdge.lifecycleStatus ?? "planned";
+  if (
+    patch.lifecycleStatus !== undefined &&
+    currentLifecycleStatus !== nextLifecycleStatus
+  ) {
+    events.push(
+      createAuditEvent({
+        actor: {
+          type: "human",
+          id: "local-user",
+          name: "Local user",
+        },
+        source: "manual_ui",
+        eventType: "edge_lifecycle_status_changed",
+        summary: `Changed edge "${currentEdge.id}" lifecycle status from ${currentLifecycleStatus} to ${nextLifecycleStatus}.`,
+        target: {
+          type: "edge",
+          id: currentEdge.id,
+        },
+        before: {
+          lifecycleStatus: currentLifecycleStatus,
+        },
+        after: {
+          lifecycleStatus: nextLifecycleStatus,
+        },
+        metadata: {
+          field: "lifecycleStatus",
+        },
+      }),
+    );
+  }
+
+  return events;
 }
 
 function formatTime(value: string): string {

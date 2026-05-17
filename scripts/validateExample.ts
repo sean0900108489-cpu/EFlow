@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { todoThoughtUniverseExample } from "../src/data/todoThoughtUniverseExample";
 import {
+  appendAuditEvent,
+  buildAuditLogSummary,
+  createAuditEvent,
+  MAX_AUDIT_LOG_EVENTS,
+  trimAuditLog,
+} from "../src/lib/auditLog";
+import {
   applyEFlowCommandToGraph,
   dryRunEFlowCommandOnGraph,
 } from "../src/lib/applyEflowCommand";
@@ -31,6 +38,7 @@ import {
   REVIEW_STATUSES,
   type EFlowCommandEnvelope,
 } from "../src/types/eflowCommand";
+import { EFLOW_AUDIT_SCHEMA_VERSION } from "../src/types/eflowAudit";
 
 const graph = generateEngineeringFlow(todoThoughtUniverseExample);
 const fullContext = buildFullAIContext(todoThoughtUniverseExample, graph);
@@ -46,6 +54,32 @@ const workspace = buildWorkspaceDocument({
   graph,
   selectedNodeId: "node-intent",
   selectedEdgeId: null,
+});
+const auditEvent = createAuditEvent({
+  createdAt: "2026-05-17T00:00:00.000Z",
+  actor: {
+    type: "human",
+    id: "local-user",
+    name: "Local user",
+  },
+  source: "manual_ui",
+  eventType: "manual_node_created",
+  summary: "Added manual node for validation.",
+  target: {
+    type: "node",
+    id: "node-manual-validation",
+  },
+  after: {
+    reviewStatus: "confirmed",
+    lifecycleStatus: "planned",
+  },
+});
+const workspaceWithAuditLog = buildWorkspaceDocument({
+  input: todoThoughtUniverseExample,
+  graph,
+  selectedNodeId: "node-intent",
+  selectedEdgeId: null,
+  auditLog: [auditEvent],
 });
 const nodeIds = new Set(graph.nodes.map((node) => node.id));
 const lifecycleSummary = buildLifecycleSummary(graph);
@@ -250,6 +284,94 @@ const restoredFullContext = buildFullAIContext(
 assert.ok(
   restoredFullContext.confirmationSummary,
   "restored full context should include confirmationSummary",
+);
+
+assert.equal(auditEvent.schemaVersion, EFLOW_AUDIT_SCHEMA_VERSION);
+assert.ok(auditEvent.id.startsWith("audit-"), "audit event id should be prefixed");
+assert.equal(auditEvent.eventType, "manual_node_created");
+const emptyAuditLog = [];
+const appendedAuditLog = appendAuditEvent(emptyAuditLog, auditEvent);
+assert.deepEqual(appendedAuditLog, [auditEvent], "appendAuditEvent should append event");
+assert.equal(emptyAuditLog.length, 0, "appendAuditEvent should not mutate an empty source array");
+const originalAuditLog = [auditEvent];
+const secondAuditEvent = createAuditEvent({
+  createdAt: "2026-05-17T00:01:00.000Z",
+  actor: {
+    type: "human",
+    id: "local-user",
+  },
+  source: "manual_ui",
+  eventType: "manual_edge_created",
+  summary: "Added manual edge for validation.",
+  target: {
+    type: "edge",
+    id: "edge-manual-validation",
+  },
+});
+const nextAuditLog = appendAuditEvent(originalAuditLog, secondAuditEvent);
+assert.notStrictEqual(nextAuditLog, originalAuditLog, "appendAuditEvent should be immutable");
+assert.equal(originalAuditLog.length, 1, "appendAuditEvent should not mutate original array");
+assert.equal(nextAuditLog.length, 2, "appendAuditEvent should include the new event");
+assert.equal(nextAuditLog[0].id, secondAuditEvent.id, "newest audit event should be first");
+const oversizedAuditLog = Array.from({ length: MAX_AUDIT_LOG_EVENTS + 5 }, (_, index) =>
+  createAuditEvent({
+    createdAt: `2026-05-17T00:${String(index % 60).padStart(2, "0")}:00.000Z`,
+    actor: {
+      type: "system",
+      id: "validate",
+    },
+    source: "system",
+    eventType: "validation_event",
+    summary: `Validation audit event ${index}.`,
+  }),
+);
+assert.equal(
+  trimAuditLog(oversizedAuditLog).length,
+  MAX_AUDIT_LOG_EVENTS,
+  "trimAuditLog should cap audit history",
+);
+const auditSummary = buildAuditLogSummary(nextAuditLog);
+assert.equal(auditSummary.totalEvents, 2, "audit summary should count events");
+assert.equal(auditSummary.bySource.manual_ui, 2, "audit summary should count manual_ui events");
+assert.equal(
+  auditSummary.byEventType.manual_node_created,
+  1,
+  "audit summary should bucket event types",
+);
+assert.ok(
+  isEFlowWorkspaceDocument(workspaceWithAuditLog),
+  "workspace validation should accept valid auditLog",
+);
+const parsedWorkspaceWithAuditLog = JSON.parse(JSON.stringify(workspaceWithAuditLog)) as unknown;
+assert.ok(
+  isEFlowWorkspaceDocument(parsedWorkspaceWithAuditLog),
+  "parsed workspace with auditLog should validate",
+);
+const missingAuditLogWorkspace = {
+  ...workspaceWithAuditLog,
+} as Record<string, unknown>;
+delete missingAuditLogWorkspace.auditLog;
+assert.ok(
+  isEFlowWorkspaceDocument(missingAuditLogWorkspace),
+  "workspace validation should accept missing auditLog for backward compatibility",
+);
+assert.deepEqual(
+  workspace.auditLog,
+  [],
+  "buildWorkspaceDocument should default missing auditLog to an empty array",
+);
+assert.deepEqual(
+  workspaceWithAuditLog.auditLog?.map((event) => event.id),
+  [auditEvent.id],
+  "Workspace JSON should include auditLog events",
+);
+assert.equal(
+  isEFlowWorkspaceDocument({
+    ...workspaceWithAuditLog,
+    auditLog: [{ ...auditEvent, schemaVersion: "wrong-schema" }],
+  }),
+  false,
+  "workspace validation should reject clearly invalid auditLog events",
 );
 
 const targetNodeId = graph.nodes[0].id;

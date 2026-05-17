@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { createAuditEvent } from "../../lib/auditLog";
 import { createManualEdge, insertManualEdge } from "../../lib/manualGraphEditing";
 import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../../types/eflowCommand";
+import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import type {
   EdgeStatus,
   EngineeringFlowGraph,
@@ -12,6 +14,7 @@ type AddManualEdgePanelProps = {
   graph: EngineeringFlowGraph;
   onApplyGraph: (graph: EngineeringFlowGraph) => void;
   onSelectEdge: (edgeId: string) => void;
+  onRecordAuditEvent: (event: EFlowAuditEvent) => void;
 };
 
 type ManualEdgeMessage = {
@@ -36,6 +39,7 @@ export function AddManualEdgePanel({
   graph,
   onApplyGraph,
   onSelectEdge,
+  onRecordAuditEvent,
 }: AddManualEdgePanelProps) {
   const [sourceNodeId, setSourceNodeId] = useState(() => graph.nodes[0]?.id ?? "");
   const [targetNodeId, setTargetNodeId] = useState(
@@ -119,6 +123,30 @@ export function AddManualEdgePanel({
     }
 
     onApplyGraph(insertResult.graph);
+    onRecordAuditEvent(
+      createAuditEvent({
+        actor: {
+          type: "human",
+          id: "local-user",
+          name: "Local user",
+        },
+        source: "manual_ui",
+        eventType: "manual_edge_created",
+        summary: `Added manual edge "${edge.source}" to "${edge.target}".`,
+        target: {
+          type: "edge",
+          id: edge.id,
+        },
+        after: {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          relationshipType: edge.relationshipType,
+          reviewStatus: edge.status,
+          lifecycleStatus: edge.lifecycleStatus ?? "planned",
+        },
+      }),
+    );
     onSelectEdge(edge.id);
     setDescription("");
     setMessage({ type: "success", text: "Added manual edge and selected it." });

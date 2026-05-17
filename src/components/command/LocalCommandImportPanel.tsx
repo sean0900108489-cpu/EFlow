@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createAuditEvent } from "../../lib/auditLog";
 import {
   applyEFlowCommandToGraph,
   dryRunEFlowCommandOnGraph,
@@ -9,6 +10,7 @@ import {
   type EFlowCommandValidationIssue,
   type EFlowCommandValidationResult,
 } from "../../lib/eflowCommandValidation";
+import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import type { EFlowCommandEnvelope } from "../../types/eflowCommand";
 import { EFLOW_COMMAND_SCHEMA_VERSION } from "../../types/eflowCommand";
 import type { EngineeringFlowGraph } from "../../types/engineeringFlow";
@@ -16,6 +18,7 @@ import type { EngineeringFlowGraph } from "../../types/engineeringFlow";
 type LocalCommandImportPanelProps = {
   graph: EngineeringFlowGraph | null;
   onApplyGraph: (graph: EngineeringFlowGraph) => void;
+  onRecordAuditEvent: (event: EFlowAuditEvent) => void;
 };
 
 type CommandMessage = {
@@ -26,6 +29,7 @@ type CommandMessage = {
 export function LocalCommandImportPanel({
   graph,
   onApplyGraph,
+  onRecordAuditEvent,
 }: LocalCommandImportPanelProps) {
   const [commandText, setCommandText] = useState("");
   const [message, setMessage] = useState<CommandMessage | null>(null);
@@ -146,6 +150,32 @@ export function LocalCommandImportPanel({
 
     if (result.ok && result.mode === "apply") {
       onApplyGraph(result.graph);
+      onRecordAuditEvent(
+        createAuditEvent({
+          actor: {
+            type: command.actor.type,
+            id: command.actor.id,
+            name: command.actor.name,
+          },
+          source: "ai_command",
+          eventType: "ai_command_applied",
+          summary: `Applied AI command ${command.commandId} with ${command.operations.length} ${command.operations.length === 1 ? "operation" : "operations"}.`,
+          target: {
+            type: "command",
+            id: command.commandId,
+          },
+          after: {
+            changes: result.changes.length,
+          },
+          metadata: {
+            commandId: command.commandId,
+            intent: command.intent,
+            operationsCount: command.operations.length,
+            changesCount: result.changes.length,
+            warningsCount: result.warnings.length,
+          },
+        }),
+      );
       setMessage({
         type: "success",
         text: "Command applied to the current graph.",

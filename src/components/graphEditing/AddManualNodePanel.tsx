@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { createAuditEvent } from "../../lib/auditLog";
 import { createManualNode, insertManualNode } from "../../lib/manualGraphEditing";
 import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../../types/eflowCommand";
+import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import type {
   EngineeringFlowGraph,
   EngineeringNodeType,
@@ -11,6 +13,7 @@ type AddManualNodePanelProps = {
   graph: EngineeringFlowGraph;
   onApplyGraph: (graph: EngineeringFlowGraph) => void;
   onSelectNode: (nodeId: string) => void;
+  onRecordAuditEvent: (event: EFlowAuditEvent) => void;
 };
 
 type ManualNodeMessage = {
@@ -49,6 +52,7 @@ export function AddManualNodePanel({
   graph,
   onApplyGraph,
   onSelectNode,
+  onRecordAuditEvent,
 }: AddManualNodePanelProps) {
   const [type, setType] = useState<EngineeringNodeType>("feature");
   const [title, setTitle] = useState("");
@@ -96,6 +100,29 @@ export function AddManualNodePanel({
     }
 
     onApplyGraph(insertResult.graph);
+    onRecordAuditEvent(
+      createAuditEvent({
+        actor: {
+          type: "human",
+          id: "local-user",
+          name: "Local user",
+        },
+        source: "manual_ui",
+        eventType: "manual_node_created",
+        summary: `Added manual node "${node.title}".`,
+        target: {
+          type: "node",
+          id: node.id,
+        },
+        after: {
+          id: node.id,
+          type: node.type,
+          title: node.title,
+          reviewStatus: node.status,
+          lifecycleStatus: node.lifecycleStatus ?? "planned",
+        },
+      }),
+    );
     onSelectNode(node.id);
     setTitle("");
     setDescription("");

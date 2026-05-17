@@ -4,6 +4,7 @@ import type {
   EngineeringFlowInput,
   FullAIContext,
 } from "../../types/engineeringFlow";
+import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import { buildFullAIContext } from "../../lib/exportContext";
 import { buildWorkspaceDocument } from "../../lib/workspacePersistence";
 import { CopyJsonButton } from "./CopyJsonButton";
@@ -15,6 +16,7 @@ type JsonExportPanelProps = {
   graph: EngineeringFlowGraph | null;
   selectedNodeId?: string | null;
   selectedEdgeId?: string | null;
+  auditLog?: EFlowAuditEvent[];
   autosaveStatus?: string;
   onImportWorkspace?: (workspace: EFlowWorkspaceDocument) => void;
   onImportFullContext?: (context: FullAIContext) => void;
@@ -27,6 +29,7 @@ export function JsonExportPanel({
   graph,
   selectedNodeId = null,
   selectedEdgeId = null,
+  auditLog = [],
   autosaveStatus = "Autosave ready",
   onImportWorkspace,
   onImportFullContext,
@@ -39,6 +42,7 @@ export function JsonExportPanel({
     graph,
     selectedNodeId,
     selectedEdgeId,
+    auditLog,
   });
   const workspaceHandlers =
     onImportWorkspace && onImportFullContext && onImportInput && onClearLocalWorkspace

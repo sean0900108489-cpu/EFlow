@@ -4,6 +4,7 @@ import type {
   EngineeringFlowInput,
   FullAIContext,
 } from "../../types/engineeringFlow";
+import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import { buildGraphTrustSummary } from "../../lib/trustSummary";
 import { JsonExportPanel } from "../export/JsonExportPanel";
 
@@ -13,6 +14,7 @@ type EmptyInspectorProps = {
   showExport?: boolean;
   selectedNodeId?: string | null;
   selectedEdgeId?: string | null;
+  auditLog?: EFlowAuditEvent[];
   autosaveStatus?: string;
   onImportWorkspace?: (workspace: EFlowWorkspaceDocument) => void;
   onImportFullContext?: (context: FullAIContext) => void;
@@ -26,6 +28,7 @@ export function EmptyInspector({
   showExport = true,
   selectedNodeId = null,
   selectedEdgeId = null,
+  auditLog = [],
   autosaveStatus,
   onImportWorkspace,
   onImportFullContext,
@@ -87,6 +90,7 @@ export function EmptyInspector({
           graph={graph}
           selectedNodeId={selectedNodeId}
           selectedEdgeId={selectedEdgeId}
+          auditLog={auditLog}
           autosaveStatus={autosaveStatus}
           onImportWorkspace={onImportWorkspace}
           onImportFullContext={onImportFullContext}

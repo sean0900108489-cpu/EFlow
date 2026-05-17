@@ -3,6 +3,7 @@ import type {
   EngineeringFlowGraph,
   EngineeringFlowInput,
 } from "../types/engineeringFlow";
+import type { EFlowAuditEvent } from "../types/eflowAudit";
 import { nowIso } from "./dates";
 import { isEFlowWorkspaceDocument } from "./workspaceValidation";
 
@@ -14,6 +15,7 @@ type BuildWorkspaceDocumentArgs = {
   graph: EngineeringFlowGraph | null;
   selectedNodeId?: string | null;
   selectedEdgeId?: string | null;
+  auditLog?: EFlowAuditEvent[];
   savedAt?: string;
 };
 
@@ -22,6 +24,7 @@ export function buildWorkspaceDocument({
   graph,
   selectedNodeId = null,
   selectedEdgeId = null,
+  auditLog = [],
   savedAt = nowIso(),
 }: BuildWorkspaceDocumentArgs): EFlowWorkspaceDocument {
   return {
@@ -33,6 +36,7 @@ export function buildWorkspaceDocument({
     engineeringFlowGraph: graph,
     selectedNodeId,
     selectedEdgeId,
+    auditLog: auditLog.map(cloneAuditEvent),
   };
 }
 
@@ -84,4 +88,15 @@ export function makeWorkspaceFilename(workspace: EFlowWorkspaceDocument): string
 
 function isBrowserStorageAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function cloneAuditEvent(event: EFlowAuditEvent): EFlowAuditEvent {
+  return {
+    ...event,
+    actor: { ...event.actor },
+    target: event.target ? { ...event.target } : undefined,
+    before: event.before ? { ...event.before } : undefined,
+    after: event.after ? { ...event.after } : undefined,
+    metadata: event.metadata ? { ...event.metadata } : undefined,
+  };
 }

@@ -754,3 +754,97 @@ Known limitations:
 Recommended next milestone:
 
 > Command History / Audit Log foundation
+
+## Completed Checkpoint: Command History / Audit Log foundation
+
+This checkpoint adds a local-first audit log foundation for graph mutations without adding undo, replay, backend services, or conflict resolution.
+
+Files changed:
+
+- `src/types/eflowAudit.ts`
+- `src/lib/auditLog.ts`
+- `src/types/engineeringFlow.ts`
+- `src/lib/workspacePersistence.ts`
+- `src/lib/workspaceValidation.ts`
+- `src/components/audit/AuditLogPanel.tsx`
+- `src/components/command/LocalCommandImportPanel.tsx`
+- `src/components/graphEditing/AddManualNodePanel.tsx`
+- `src/components/graphEditing/AddManualEdgePanel.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/components/inspector/EmptyInspector.tsx`
+- `src/components/export/JsonExportPanel.tsx`
+- `src/App.tsx`
+- `src/styles/components.css`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `eflow-audit/v0.1` audit event types for lightweight local change history.
+- Added audit helpers for event creation, immutable append, newest-first trimming, validation, and compact summaries.
+- Audit history is capped at 200 events and stores only compact before/after metadata, not full graph snapshots.
+- Extended `EFlowWorkspaceDocument` with optional `auditLog`.
+- Workspace documents built by the app now include `auditLog`.
+- Existing workspace documents without `auditLog` remain valid and restore as an empty audit log.
+- Workspace validation accepts valid audit logs and rejects clearly invalid audit entries.
+- Local storage autosave/restore preserves audit history through the existing workspace document path.
+- Workspace JSON export/import includes and preserves audit history naturally.
+- Added a compact `Change History` panel to the right inspector stack near Manual Context and Implementation Progress.
+- The panel shows total event count, latest events, source, event type, timestamp, and target metadata.
+
+Audit event coverage:
+
+- `manual_node_created` records after successful Add Manual Node UI insertion.
+- `manual_edge_created` records after successful Add Manual Edge UI insertion.
+- `ai_command_applied` records after successful Local Command Import apply mode.
+- `node_review_status_changed` records for node legacy review `status` changes.
+- `node_lifecycle_status_changed` records for node `lifecycleStatus` changes.
+- `edge_review_status_changed` records for edge legacy review `status` changes.
+- `edge_lifecycle_status_changed` records for edge `lifecycleStatus` changes.
+- Review status audit events intentionally refer to legacy `status` as review status and do not confuse it with lifecycle state.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Confirmed Todo Thought Universe example generation shows an empty Change History state.
+- Confirmed manual node creation records `manual_node_created`.
+- Confirmed manual edge creation records `manual_edge_created`.
+- Confirmed Local Command Import apply records `ai_command_applied`.
+- Confirmed audit history survives browser refresh after the existing workspace autosave completes.
+- Confirmed Workspace JSON export includes `auditLog`.
+- Confirmed Workspace JSON import preserves `auditLog`.
+- Confirmed Add Manual Node UI still works.
+- Confirmed Add Manual Edge UI still works.
+- Confirmed Manual Context Summary still works.
+- Confirmed Lifecycle Progress Summary still works.
+- Confirmed AI-Native Context Export UI still exists.
+- Confirmed Local Command Import UI still exists.
+- Confirmed NodeInspector review and lifecycle edits are audited.
+- Confirmed EdgeInspector review and lifecycle edits are audited.
+- Confirmed no undo, command replay, backend, cloud sync, conflict resolution, or signed audit trail was added.
+
+Known limitations:
+
+- No undo/redo.
+- No command replay.
+- No conflict resolution.
+- No signed or tamper-proof audit trail.
+- No backend, database, auth, or cloud sync.
+- No AI API, MCP server, or agent execution.
+- No canvas direct editing.
+- No drag-to-create.
+- No canvas lifecycle badges.
+- No lifecycle filters.
+- Audit persistence follows the existing debounced local workspace autosave timing.
+
+Recommended next milestone:
+
+> Audit Coverage Polish
+
+Keep the next step small: audit graph generation/import/reset boundaries and refine event summaries before exploring larger canvas lifecycle badges or filters.

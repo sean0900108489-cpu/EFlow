@@ -5,6 +5,7 @@ import type {
   EFlowProvenance,
   LifecycleStatus,
 } from "./eflowCommand";
+import type { EFlowAuditEvent } from "./eflowAudit";
 
 export type SourceType =
   | "user_input"
@@ -203,4 +204,5 @@ export type EFlowWorkspaceDocument = {
   engineeringFlowGraph: EngineeringFlowGraph | null;
   selectedNodeId?: string | null;
   selectedEdgeId?: string | null;
+  auditLog?: EFlowAuditEvent[];
 };

@@ -10,6 +10,7 @@ import type {
   SourceType,
 } from "../types/engineeringFlow";
 import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../types/eflowCommand";
+import { isEFlowAuditLog } from "./auditLog";
 
 type ValidationResult = {
   ok: boolean;
@@ -103,6 +104,9 @@ export function isEFlowWorkspaceDocument(value: unknown): value is EFlowWorkspac
     return false;
   }
   if (value.selectedEdgeId !== undefined && value.selectedEdgeId !== null && typeof value.selectedEdgeId !== "string") {
+    return false;
+  }
+  if (value.auditLog !== undefined && !isEFlowAuditLog(value.auditLog)) {
     return false;
   }
 
