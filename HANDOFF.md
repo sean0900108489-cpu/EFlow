@@ -1357,3 +1357,78 @@ Known limitations:
 Recommended next milestone:
 
 > Final Regression Pass / v1 checkpoint
+
+## Completed Checkpoint: Final Regression Pass / v1 Readiness Check
+
+This checkpoint completes the local-first v1 regression pass without changing app behavior, schemas, command semantics, workspace persistence, or deployment infrastructure.
+
+Files changed:
+
+- `HANDOFF.md`
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser regression result:
+
+- Passed against `http://127.0.0.1:5173`.
+- Loaded the Todo Thought Universe example and generated the engineering graph.
+- Confirmed the expected generated graph: 52 nodes, 93 edges, and 3 blocking questions.
+- Confirmed the React Flow canvas renders generated nodes and edges.
+- Confirmed right panel collapsible sections render and toggle safely:
+  - Selected Item
+  - Review
+  - Implementation Progress
+  - Manual Editing
+  - Change History
+  - AI Interop
+  - Workspace / Export
+- Confirmed NodeInspector review status controls and lifecycle status controls remain separate and functional.
+- Confirmed EdgeInspector review status controls and lifecycle status controls remain separate and functional.
+- Confirmed missing lifecycle state is displayed and counted as `planned`.
+- Confirmed changing a node lifecycle status updates the progress summary, canvas lifecycle badge, and lifecycle canvas filters.
+- Confirmed filtering to `Completed` hides unrelated nodes and does not leave dangling edges; resetting to `All` restores the full graph.
+- Confirmed manual node creation adds a selectable canvas node, shows the `Manual context` badge, defaults to review `confirmed`, defaults lifecycle to `planned`, and updates the Manual Context Summary.
+- Confirmed manual edge creation adds a selectable canvas edge, shows the `Manual relationship` badge, defaults to review `confirmed`, defaults lifecycle to `planned`, and updates the Manual Context Summary.
+- Confirmed duplicate exact manual edge creation is rejected safely.
+- Confirmed same source/target manual edge creation is rejected safely.
+- Confirmed Change History records graph generation, manual node creation, manual edge creation, node review changes, node lifecycle changes, edge review changes, edge lifecycle changes, AI command apply, and workspace import.
+- Confirmed no undo/replay behavior exists in Change History.
+- Confirmed Local Command Import validates, dry-runs without graph mutation, applies graph updates, records `ai_command_applied`, handles invalid JSON safely, and rejects invalid lifecycle status safely.
+- Confirmed AI-Native Context Export copies `eflow-context/v0.1` JSON with `commandInterface`, `progressSummary`, `reviewSummary`, manual node data, and manual edge data.
+- Confirmed Workspace JSON export includes graph state, manual node, manual edge, audit log, and lifecycle status values.
+- Confirmed Workspace JSON import preserves manual graph items, audit log, lifecycle state, and records `workspace_imported`.
+- Confirmed browser refresh restores the imported workspace state from local persistence.
+- Confirmed no browser console errors were reported during the final regression pass.
+
+Documentation consistency result:
+
+- README.md, AGENTS.md, and HANDOFF.md remain consistent on EFlow's local-first, schema-first direction.
+- Documentation preserves the distinction between legacy graph `status`, formal AI-facing `reviewStatus`, and implementation `lifecycleStatus`.
+- Documentation keeps `EngineeringFlowGraph` as the source of truth and the canvas as a visual rendering.
+- Documentation keeps `auditLog` framed as local workspace history, not undo/replay.
+- Documentation describes `eflow-context/v0.1` and `eflow-command/v0.1`.
+- Documentation continues to state there is no backend, database, auth, cloud sync, real AI API, MCP server, REST API, CLI, repo analyzer, or agent execution.
+- README.md and HANDOFF.md continue to mark the live demo URL as pending.
+
+Known limitations:
+
+- Live demo URL is still pending.
+- No backend, database, auth, or cloud sync.
+- No real AI API, MCP server, REST API, or CLI.
+- No repo analyzer.
+- No agent execution.
+- No undo/redo.
+- No command replay.
+- No conflict resolution.
+- No signed or tamper-proof audit trail.
+- No canvas direct editing.
+- No drag-to-create.
+- No edge lifecycle badges or edge lifecycle filters.
+
+Recommended next milestone:
+
+> v1 tag / final checkpoint
