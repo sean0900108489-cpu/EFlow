@@ -935,3 +935,59 @@ Known limitations:
 Recommended next milestone:
 
 > Canvas Node Lifecycle Badges
+
+## Completed Checkpoint: Canvas Node Lifecycle Badges
+
+This checkpoint adds subtle display-only lifecycle badges to canvas nodes without changing graph generation, command import behavior, audit behavior, persistence behavior, or canvas editing capabilities.
+
+Files changed:
+
+- `src/components/graph/EngineeringNodeCard.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added a compact lifecycle pill to the custom React Flow node card renderer.
+- Canvas node badges read `node.lifecycleStatus` directly from graph node data.
+- Missing node `lifecycleStatus` values display as `planned` without writing `planned` back into the graph.
+- Lifecycle labels render as Draft, Planned, Ready, Developing, Completed, Blocked, Needs refactor, and Deprecated.
+- Added calm, muted lifecycle badge colors for draft, planned, ready, developing, completed, blocked, needs_refactor, and deprecated.
+- Preserved the existing legacy node `status` review pill and did not reinterpret it as lifecycle state.
+- Badge updates naturally from graph state after NodeInspector lifecycle edits, Local Command Import apply, workspace restore, and manual node creation.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Confirmed Todo Thought Universe example generation shows lifecycle badges on canvas nodes.
+- Confirmed generated nodes with missing `lifecycleStatus` display `Planned`.
+- Confirmed NodeInspector lifecycle edit updates the selected canvas node badge to `Completed`.
+- Confirmed Local Command Import apply updates a different canvas node badge to `Blocked`.
+- Confirmed manual node creation shows a `Planned` badge by default.
+- Confirmed manual edge creation still works.
+- Confirmed browser refresh restores node lifecycle badges from the saved workspace.
+- Confirmed Lifecycle Progress Summary still updates.
+- Confirmed Audit Log panel still exists.
+- Confirmed Add Manual Node UI and Add Manual Edge UI still work.
+- Confirmed no lifecycle filters were added.
+- Confirmed no edge lifecycle badges were added.
+- Confirmed no canvas direct editing or drag-to-create behavior was added.
+
+Known limitations:
+
+- Edge lifecycle badges are not implemented.
+- Lifecycle filters are not implemented.
+- Canvas direct editing is not implemented.
+- Drag-to-create is not implemented.
+
+Recommended next milestone:
+
+> Lifecycle Canvas Filters
+
+Keep filters small and optional; this should not become a full canvas redesign.

@@ -421,6 +421,12 @@
   gap: 8px;
 }
 
+.node-card-lifecycle-row {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
 .type-badge,
 .status-pill {
   display: inline-flex;
@@ -477,6 +483,74 @@
 .status-rejected {
   color: var(--amber);
   background: var(--amber-soft);
+}
+
+.lifecycle-node-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 1px solid rgba(99, 112, 133, 0.16);
+  border-radius: 999px;
+  color: #5b6677;
+  background: #eef1f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.lifecycle-node-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.74;
+}
+
+.lifecycle-node-badge-draft,
+.lifecycle-node-badge-planned {
+  color: #647083;
+  background: #eef1f5;
+}
+
+.lifecycle-node-badge-ready {
+  color: #0f766e;
+  background: #e8f7f4;
+  border-color: rgba(15, 118, 110, 0.16);
+}
+
+.lifecycle-node-badge-developing {
+  color: #1f5fd0;
+  background: var(--blue-soft);
+  border-color: rgba(37, 99, 235, 0.14);
+}
+
+.lifecycle-node-badge-completed {
+  color: var(--green);
+  background: var(--green-soft);
+  border-color: rgba(22, 131, 93, 0.16);
+}
+
+.lifecycle-node-badge-blocked {
+  color: #b84949;
+  background: #fff0ed;
+  border-color: rgba(184, 73, 73, 0.16);
+}
+
+.lifecycle-node-badge-needs_refactor {
+  color: var(--amber);
+  background: var(--amber-soft);
+  border-color: rgba(154, 101, 21, 0.16);
+}
+
+.lifecycle-node-badge-deprecated {
+  color: #6b7280;
+  background: #f0f3f8;
 }
 
 .node-handle {
