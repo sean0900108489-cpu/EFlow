@@ -4,6 +4,7 @@ import {
   applyEFlowCommandToGraph,
   dryRunEFlowCommandOnGraph,
 } from "../src/lib/applyEflowCommand";
+import { buildEFlowContextExport } from "../src/lib/buildEflowContextExport";
 import {
   isEFlowCommandEnvelope,
   validateEFlowCommandEnvelope,
@@ -15,10 +16,22 @@ import {
   isEFlowWorkspaceDocument,
   validateEngineeringFlowGraph,
 } from "../src/lib/workspaceValidation";
-import type { EFlowCommandEnvelope } from "../src/types/eflowCommand";
+import {
+  EFLOW_COMMAND_SCHEMA_VERSION,
+  LIFECYCLE_STATUSES,
+  REVIEW_STATUSES,
+  type EFlowCommandEnvelope,
+} from "../src/types/eflowCommand";
 
 const graph = generateEngineeringFlow(todoThoughtUniverseExample);
 const fullContext = buildFullAIContext(todoThoughtUniverseExample, graph);
+const eflowContext = buildEFlowContextExport({
+  engineeringFlowInput: todoThoughtUniverseExample,
+  engineeringFlowGraph: graph,
+  generatedAt: "2026-05-17T00:00:00.000Z",
+  graphRevision: "validate-example",
+  sourceWorkspaceSchemaVersion: "eflow-workspace/v0.3",
+});
 const workspace = buildWorkspaceDocument({
   input: todoThoughtUniverseExample,
   graph,
@@ -69,6 +82,58 @@ assert.equal(
   fullContext.confirmationSummary.blockingQuestionNodeIds.length,
   3,
   "example graph should have 3 blocking questions",
+);
+
+assert.equal(eflowContext.schemaVersion, "eflow-context/v0.1");
+assert.ok(eflowContext.generatedAt, "EFlow context should include generatedAt");
+assert.equal(
+  eflowContext.project.name,
+  todoThoughtUniverseExample.projectName,
+  "EFlow context project name should match input",
+);
+assert.equal(eflowContext.graph.nodes.length, 52, "EFlow context should include 52 nodes");
+assert.equal(eflowContext.graph.edges.length, 93, "EFlow context should include 93 edges");
+for (const status of REVIEW_STATUSES) {
+  assert.ok(
+    status in eflowContext.policies.confirmationPolicy,
+    `confirmationPolicy should include ${status}`,
+  );
+  assert.ok(
+    status in eflowContext.reviewSummary.nodesByReviewStatus,
+    `node review summary should include ${status}`,
+  );
+  assert.ok(
+    status in eflowContext.reviewSummary.edgesByReviewStatus,
+    `edge review summary should include ${status}`,
+  );
+}
+for (const status of LIFECYCLE_STATUSES) {
+  assert.ok(
+    status in eflowContext.policies.stateMachinePolicy,
+    `stateMachinePolicy should include ${status}`,
+  );
+  assert.ok(
+    status in eflowContext.progressSummary.nodesByLifecycle,
+    `node progress summary should include ${status}`,
+  );
+  assert.ok(
+    status in eflowContext.progressSummary.edgesByLifecycle,
+    `edge progress summary should include ${status}`,
+  );
+}
+assert.ok(
+  graph.nodes.every((node) => eflowContext.dependencyIndex[node.id]),
+  "dependencyIndex should have one entry per node",
+);
+assert.equal(
+  eflowContext.blockingQuestions.length,
+  3,
+  "EFlow context should include 3 blocking questions",
+);
+assert.ok(eflowContext.mermaid?.flowchart, "EFlow context should include Mermaid flowchart");
+assert.ok(
+  eflowContext.commandInterface.acceptedSchemaVersions.includes(EFLOW_COMMAND_SCHEMA_VERSION),
+  "EFlow context should advertise accepted command schema version",
 );
 
 assert.ok(isEFlowWorkspaceDocument(workspace), "workspace document should validate");
@@ -169,6 +234,20 @@ assert.equal(
 assert.ok(
   appliedTargetNode.implementation?.stateHistory?.length,
   "transitionNode should append implementation state history",
+);
+
+const appliedEflowContext = buildEFlowContextExport({
+  engineeringFlowInput: todoThoughtUniverseExample,
+  engineeringFlowGraph: applyResult.graph,
+  generatedAt: "2026-05-17T00:00:00.000Z",
+});
+assert.ok(
+  appliedEflowContext.progressSummary.nodesByLifecycle.completed.includes(targetNodeId),
+  "completed node should appear in lifecycle progress summary",
+);
+assert.ok(
+  appliedEflowContext.reviewSummary.nodesByReviewStatus.confirmed.includes(targetNodeId),
+  "confirmed node should appear in review summary",
 );
 
 const upsertCommand: EFlowCommandEnvelope = {

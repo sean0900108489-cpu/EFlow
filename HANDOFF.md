@@ -294,3 +294,50 @@ Alternative follow-up:
 > Local Command Import UI
 
 Do not begin either follow-up until explicitly instructed.
+
+## Completed Checkpoint: AI-Native Context Export v0.1
+
+This checkpoint adds the headless read-side counterpart to local AI command intake.
+
+Files changed:
+
+- `src/lib/buildEflowContextExport.ts`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- `buildEFlowContextExport` for producing formal `eflow-context/v0.1` exports.
+- Mapping from legacy graph `status` fields to official `reviewStatus`.
+- Default lifecycle mapping using `planned` when graph items do not yet have `lifecycleStatus`.
+- Context graph conversion into `EFlowCommandNode` and `EFlowCommandEdge` compatible shapes.
+- Dependency index with `dependsOn`, `blocks`, and `relatedEdges`.
+- Review and lifecycle progress summaries.
+- Blocking question extraction from blocking question nodes.
+- Deterministic next development target recommendations.
+- Mermaid flowchart, dependency graph, and lifecycle state summary output.
+- Command interface metadata advertising `eflow-command/v0.1` and preferred graph operations.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+
+Known boundaries:
+
+- No UI was added.
+- Existing Full AI Context export remains unchanged.
+- The new `eflow-context/v0.1` builder is headless and not wired into the export panel yet.
+- Lifecycle defaults are exported as `planned` when graph items do not yet store lifecycle state.
+- Dependency semantics are currently derived from graph edges only.
+
+Recommended next milestone:
+
+> Local Command Import UI
+
+Alternative follow-ups:
+
+- Lifecycle State Display
+- Manual Graph Editing / Add Missing Context
+
+Do not begin those follow-ups until explicitly instructed.
