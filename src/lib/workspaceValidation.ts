@@ -9,6 +9,7 @@ import type {
   RelationshipType,
   SourceType,
 } from "../types/engineeringFlow";
+import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../types/eflowCommand";
 
 type ValidationResult = {
   ok: boolean;
@@ -21,6 +22,9 @@ const sourceTypes: SourceType[] = [
   "system_generated",
   "ai_suggested",
   "manual_edit",
+  "ai_command",
+  "ai_progress_sync",
+  "context_import",
 ];
 
 const nodeTypes: EngineeringNodeType[] = [
@@ -160,6 +164,13 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
       errors.push(`Node ${node.id ?? index} is missing aiReadableSummary.`);
     }
 
+    if (
+      node.lifecycleStatus !== undefined &&
+      !LIFECYCLE_STATUSES.includes(node.lifecycleStatus as LifecycleStatus)
+    ) {
+      errors.push(`Node ${node.id ?? index} has invalid lifecycleStatus.`);
+    }
+
     if (!isRecord(node.position)) {
       errors.push(`Node ${node.id ?? index} is missing position.`);
     } else {
@@ -204,6 +215,13 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
 
     if (typeof edge.description !== "string") {
       errors.push(`Edge ${edge.id ?? index} is missing description.`);
+    }
+
+    if (
+      edge.lifecycleStatus !== undefined &&
+      !LIFECYCLE_STATUSES.includes(edge.lifecycleStatus as LifecycleStatus)
+    ) {
+      errors.push(`Edge ${edge.id ?? index} has invalid lifecycleStatus.`);
     }
   });
 

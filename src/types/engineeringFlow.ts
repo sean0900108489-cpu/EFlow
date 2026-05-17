@@ -1,9 +1,20 @@
+import type {
+  EFlowEvidence,
+  EFlowImplementationState,
+  EFlowMetadata,
+  EFlowProvenance,
+  LifecycleStatus,
+} from "./eflowCommand";
+
 export type SourceType =
   | "user_input"
   | "example_seed"
   | "system_generated"
   | "ai_suggested"
-  | "manual_edit";
+  | "manual_edit"
+  | "ai_command"
+  | "ai_progress_sync"
+  | "context_import";
 
 export type Priority = "must_have" | "should_have" | "later";
 
@@ -111,7 +122,16 @@ export type EngineeringNode = {
     sourceInputSection?: string;
     sourceInputId?: string;
     generationRule?: string;
+    commandId?: string;
+    actorId?: string;
+    updatedAt?: string;
+    reason?: string;
+    evidence?: EFlowEvidence[];
   };
+  lifecycleStatus?: LifecycleStatus;
+  commandProvenance?: EFlowProvenance[];
+  implementation?: EFlowImplementationState;
+  metadata?: EFlowMetadata;
 };
 
 export type EngineeringEdge = {
@@ -126,7 +146,16 @@ export type EngineeringEdge = {
     sourceType: SourceType;
     sourceInputIds?: string[];
     generationRule?: string;
+    commandId?: string;
+    actorId?: string;
+    updatedAt?: string;
+    reason?: string;
+    evidence?: EFlowEvidence[];
   };
+  lifecycleStatus?: LifecycleStatus;
+  commandProvenance?: EFlowProvenance[];
+  implementation?: EFlowImplementationState;
+  metadata?: EFlowMetadata;
 };
 
 export type EngineeringFlowGraph = {

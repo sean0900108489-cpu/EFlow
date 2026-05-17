@@ -248,3 +248,49 @@ Do not write UI code.
 Do not implement functionality.
 Do not commit.
 Do not push.
+
+## Completed Checkpoint: Local AI Command Intake / Apply Foundation
+
+This checkpoint adds headless/local-first command handling foundations only.
+
+Files changed:
+
+- `src/types/engineeringFlow.ts`
+- `src/lib/workspaceValidation.ts`
+- `src/lib/eflowCommandValidation.ts`
+- `src/lib/applyEflowCommand.ts`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Plain TypeScript validation helpers for `eflow-command/v0.1` envelopes.
+- Type guards for review status, lifecycle status, and command envelopes.
+- Headless dry-run and apply helpers for `EngineeringFlowGraph`.
+- Legacy compatibility mapping from command `reviewStatus` to graph `status`.
+- Optional `lifecycleStatus` and implementation state support on graph nodes and edges.
+- Provenance-preserving command traces through optional command provenance and implementation history.
+- Validation coverage for update, transition, upsert, duplicate edge prevention, missing target detection, and invalid lifecycle status rejection.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+
+Known boundaries:
+
+- No UI was added.
+- No command import panel was added.
+- No backend, database, auth, cloud sync, real AI API, MCP server, CLI command, repo analyzer, or agent execution was added.
+- Expanded command node and relationship types that are not supported by the current legacy graph are rejected by apply helpers.
+- `addDecision` and `addQuestion` validate as command schema concepts but return unsupported graph-apply errors in this milestone.
+
+Recommended next milestone:
+
+> AI-Native Context Export v0.1
+
+Alternative follow-up:
+
+> Local Command Import UI
+
+Do not begin either follow-up until explicitly instructed.
