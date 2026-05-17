@@ -606,6 +606,42 @@
   border-top: 1px solid var(--line);
 }
 
+.manual-node-panel {
+  display: grid;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.manual-node-form {
+  display: grid;
+  gap: 10px;
+}
+
+.manual-node-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.manual-node-message {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.manual-node-message-success {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.manual-node-message-error {
+  color: var(--red);
+  background: var(--red-soft);
+}
+
 .command-helper,
 .command-note {
   color: var(--muted);

@@ -563,3 +563,58 @@ Known limitations:
 Recommended next milestone:
 
 > Add Manual Node UI
+
+## Completed Checkpoint: Add Manual Node UI
+
+This checkpoint adds a small local-first UI for creating manual graph nodes from the right inspector stack.
+
+Files changed:
+
+- `src/components/graphEditing/AddManualNodePanel.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `AddManualNodePanel` for creating manual graph nodes whenever an `EngineeringFlowGraph` exists.
+- The panel supports node type, title, description, optional AI-readable summary, review status, and lifecycle status.
+- Defaults are `type: "feature"`, legacy review `status: "confirmed"`, and `lifecycleStatus: "planned"`.
+- Review status choices are intentionally limited to `confirmed` and `needs_review`.
+- Lifecycle choices use the accepted lifecycle state list: `draft`, `planned`, `ready`, `developing`, `completed`, `blocked`, `needs_refactor`, and `deprecated`.
+- Manual nodes are created with `createManualNode` and inserted immutably with `insertManualNode`.
+- Successful insertion replaces the graph state and selects the newly added node through the existing app selection path.
+- Manual nodes appear on the canvas, in `NodeInspector`, in lifecycle and review summaries, and in exports naturally because they are part of the current graph.
+- Workspace autosave and restore preserve manual nodes through the existing workspace persistence path.
+- Existing graph generation, command import behavior, export behavior, and canvas editing behavior were not changed.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed using the Todo Thought Universe example.
+- Confirmed Add Manual Node UI appears after graph generation.
+- Added a manual node with default `feature`, `confirmed`, and `planned` values.
+- Confirmed the manual node appears on the canvas and is selectable.
+- Confirmed `NodeInspector` shows the manual node, including `manual_edit` provenance and `human_added_node` generation rule.
+- Confirmed EngineeringFlowGraph export, EFlow Context export, and Workspace export include the manual node.
+- Confirmed browser refresh restores the manual node from local workspace persistence.
+- Confirmed existing NodeInspector lifecycle controls still update lifecycle counts.
+- Confirmed Lifecycle Progress Summary updates node counts.
+- Confirmed Local Command Import UI and AI-Native Context Export UI still exist.
+- Confirmed no manual edge UI was added.
+
+Known limitations:
+
+- Manual edge UI still not implemented.
+- Canvas direct editing still not implemented.
+- Canvas lifecycle badges still not implemented.
+- Lifecycle filters still not implemented.
+
+Recommended next milestone:
+
+> Add Manual Edge UI
