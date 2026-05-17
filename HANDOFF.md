@@ -1314,3 +1314,46 @@ Known limitations:
 Recommended next milestone:
 
 > Deployment / GitHub Website Link
+
+## Completed Checkpoint: Deployment / GitHub Website Link
+
+This checkpoint documents EFlow's static deployment readiness and live URL status without changing app behavior or adding deployment infrastructure.
+
+Files changed:
+
+- `README.md`
+- `HANDOFF.md`
+
+Deployment readiness conclusion:
+
+- EFlow is a frontend-only Vite app.
+- `npm run build` runs TypeScript and Vite production builds and produces `dist/`.
+- The generated `dist/` output is suitable for Vercel, Netlify, or GitHub Pages static hosting.
+- The current app does not require a backend, database, auth service, cloud sync, AI API, MCP server, REST API, CLI, or backend environment variables.
+- Workspace data remains browser-local through `localStorage`; a deployed static site does not sync workspaces across browsers, devices, or users.
+
+Live URL status:
+
+- Live demo URL is pending because no deployed URL has been provided yet.
+- Once available, add the deployed URL to README and GitHub repo About -> Website.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Not required because this checkpoint changed documentation only and did not change UI or code behavior.
+
+Known limitations:
+
+- Live demo URL is still pending.
+- Final regression pass is still pending.
+- No backend, database, auth, cloud sync, AI API, MCP server, REST API, CLI, repo analyzer, or agent execution.
+- Workspace data is browser-local and does not sync across browsers or devices.
+
+Recommended next milestone:
+
+> Final Regression Pass / v1 checkpoint

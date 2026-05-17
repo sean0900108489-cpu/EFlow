@@ -215,6 +215,21 @@ npm run build
 
 `validate:example` checks the built-in example, graph generation, AI context export, command validation/apply behavior, manual graph editing helpers, workspace validation, lifecycle summaries, review summaries, and audit log validation.
 
+## Deployment
+
+EFlow is deployment-ready as a static Vite app. `npm run build` runs the TypeScript build and Vite production build, producing `dist/`.
+
+Deployment notes:
+
+- Suitable for Vercel, Netlify, or GitHub Pages static hosting.
+- No backend, database, auth service, cloud sync, AI API, MCP server, REST API, or CLI is required to deploy the current app.
+- No backend environment variables are required for the current frontend-only build.
+- Workspace data is stored in browser `localStorage`.
+- In a deployed static site, workspace data remains browser-local and does not sync across browsers, devices, or users.
+- Live demo URL: pending.
+
+Once a live site is available, add the deployed URL to GitHub repo About -> Website.
+
 ## Important Files
 
 - `src/types/engineeringFlow.ts`
@@ -253,14 +268,14 @@ EFlow intentionally does not currently include:
 - Drag-to-create.
 - Edge lifecycle badges.
 - Edge lifecycle filters.
-- Deployment/release website link.
+- Live demo URL is still pending.
 
 ## Roadmap
 
 Near-term local-first v1 work:
 
-- Add deployment or GitHub website link.
-- Run a final regression pass.
+- Add the live URL to this README and GitHub repo About -> Website once available.
+- Run a final regression pass / v1 checkpoint.
 - Cut a v1 tag.
 
 Future protocol work should come after the local-first v1 checkpoint:
