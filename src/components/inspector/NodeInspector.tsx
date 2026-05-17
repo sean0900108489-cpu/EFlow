@@ -3,6 +3,7 @@ import type {
   EngineeringNodeType,
   NodeStatus,
 } from "../../types/engineeringFlow";
+import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../../types/eflowCommand";
 
 type NodeInspectorProps = {
   node: EngineeringNode;
@@ -23,6 +24,8 @@ const nodeTypes: EngineeringNodeType[] = [
 const nodeStatuses: NodeStatus[] = ["suggested", "confirmed", "needs_review"];
 
 export function NodeInspector({ node, onChange }: NodeInspectorProps) {
+  const displayedLifecycleStatus = node.lifecycleStatus ?? "planned";
+
   return (
     <section className="inspector-section">
       <div className="panel-heading">
@@ -83,6 +86,21 @@ export function NodeInspector({ node, onChange }: NodeInspectorProps) {
           </select>
         </label>
       </div>
+      <label className="field">
+        <span>Lifecycle status</span>
+        <select
+          value={displayedLifecycleStatus}
+          onChange={(event) =>
+            onChange({ lifecycleStatus: event.target.value as LifecycleStatus })
+          }
+        >
+          {LIFECYCLE_STATUSES.map((status) => (
+            <option value={status} key={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="field">
         <span>AI-readable summary</span>
         <textarea

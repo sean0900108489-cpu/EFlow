@@ -433,3 +433,42 @@ Recommended next milestone:
 Alternative follow-up:
 
 > Manual Graph Editing / Add Missing Context
+
+## Completed Checkpoint: Lifecycle State Inspector Display
+
+This checkpoint exposes lifecycle state editing in the existing node and edge inspectors.
+
+Files changed:
+
+- `src/components/inspector/NodeInspector.tsx`
+- `src/components/inspector/EdgeInspector.tsx`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added `Lifecycle status` display and editing to `NodeInspector`.
+- Added `Lifecycle status` display and editing to `EdgeInspector`.
+- Missing node and edge `lifecycleStatus` values display as `planned`.
+- Lifecycle edits write to `node.lifecycleStatus` or `edge.lifecycleStatus`.
+- Existing legacy review status controls remain unchanged and continue to write to `status`.
+- Existing immutable graph update paths continue to update `graph.updatedAt`, workspace autosave, and exports.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed for node lifecycle display defaulting to `planned`, node lifecycle edit to `completed`, edge lifecycle display defaulting to `planned`, edge lifecycle edit to `blocked`, graph export lifecycle persistence, EFlow Context lifecycle progress summaries, existing review status controls, AI-Native Context export visibility, Local Command Import panel visibility in the empty inspector flow, and local workspace restore after refresh.
+
+Known limitations:
+
+- No canvas lifecycle badges yet.
+- No lifecycle progress dashboard yet.
+- Manual Graph Editing / Add Missing Context is still not implemented.
+
+Recommended next milestone:
+
+> Lifecycle Progress Summary

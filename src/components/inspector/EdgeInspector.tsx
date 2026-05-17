@@ -3,6 +3,7 @@ import type {
   EngineeringEdge,
   RelationshipType,
 } from "../../types/engineeringFlow";
+import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../../types/eflowCommand";
 
 type EdgeInspectorProps = {
   edge: EngineeringEdge;
@@ -23,6 +24,8 @@ const relationshipTypes: RelationshipType[] = [
 const edgeStatuses: EdgeStatus[] = ["suggested", "confirmed", "rejected"];
 
 export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
+  const displayedLifecycleStatus = edge.lifecycleStatus ?? "planned";
+
   return (
     <section className="inspector-section">
       <div className="panel-heading">
@@ -61,6 +64,21 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
           onChange={(event) => onChange({ status: event.target.value as EdgeStatus })}
         >
           {edgeStatuses.map((status) => (
+            <option value={status} key={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>Lifecycle status</span>
+        <select
+          value={displayedLifecycleStatus}
+          onChange={(event) =>
+            onChange({ lifecycleStatus: event.target.value as LifecycleStatus })
+          }
+        >
+          {LIFECYCLE_STATUSES.map((status) => (
             <option value={status} key={status}>
               {status}
             </option>
