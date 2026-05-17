@@ -531,6 +531,29 @@
   border-top: 1px solid var(--line);
 }
 
+.eflow-context-panel {
+  display: grid;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.context-summary-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.context-command-schema,
+.context-empty-note {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.context-command-schema strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
 .workspace-helper {
   color: var(--muted);
   font-size: 0.84rem;

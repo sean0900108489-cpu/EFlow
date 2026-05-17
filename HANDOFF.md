@@ -341,3 +341,48 @@ Alternative follow-ups:
 - Manual Graph Editing / Add Missing Context
 
 Do not begin those follow-ups until explicitly instructed.
+
+## Completed Checkpoint: AI-Native Context Export UI
+
+This checkpoint wires the headless `eflow-context/v0.1` builder into the existing export UI.
+
+Files changed:
+
+- `src/components/export/EFlowContextExportPanel.tsx`
+- `src/components/export/JsonExportPanel.tsx`
+- `src/styles/components.css`
+- `HANDOFF.md`
+
+Implemented:
+
+- Added an AI-Native Context Export section to the existing JSON export area.
+- The section calls `buildEFlowContextExport` with the current `EngineeringFlowInput` and `EngineeringFlowGraph`.
+- Added copy support through the existing `CopyJsonButton` pattern.
+- Added download support for `eflow-context-{project-name}.json`.
+- Added concise export metadata for schema version, project, node count, edge count, blocking questions, completed nodes, and accepted command schema.
+- Preserved existing EngineeringFlowInput, EngineeringFlowGraph, Full AI Context, Workspace JSON, and import/export behavior.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed for section visibility, graph-generated metadata, AI context copy fallback, JSON contents, and existing Full AI Context export visibility.
+- The Codex in-app browser does not support download events, so file creation for `Download AI Context JSON` could not be fully verified there. The button is visible and uses the same browser download pattern as the workspace export.
+
+Known boundaries:
+
+- No command import UI was added.
+- No command apply UI was added.
+- No lifecycle display on the canvas was added.
+- No manual graph editing was added.
+- No backend, database, auth, cloud sync, real AI API, MCP server, CLI command, repo analyzer, or agent execution was added.
+
+Recommended next milestone:
+
+> Local Command Import UI
+
+Do not begin this follow-up until explicitly instructed.

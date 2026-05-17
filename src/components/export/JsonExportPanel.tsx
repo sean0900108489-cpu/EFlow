@@ -7,6 +7,7 @@ import type {
 import { buildFullAIContext } from "../../lib/exportContext";
 import { buildWorkspaceDocument } from "../../lib/workspacePersistence";
 import { CopyJsonButton } from "./CopyJsonButton";
+import { EFlowContextExportPanel } from "./EFlowContextExportPanel";
 import { WorkspacePersistencePanel } from "./WorkspacePersistencePanel";
 
 type JsonExportPanelProps = {
@@ -68,6 +69,7 @@ export function JsonExportPanel({
           <CopyJsonButton label="Copy Full AI Context JSON" value={fullContext} />
         </div>
       </section>
+      <EFlowContextExportPanel input={input} graph={graph} />
       {workspaceHandlers ? (
         <WorkspacePersistencePanel
           workspace={workspace}
