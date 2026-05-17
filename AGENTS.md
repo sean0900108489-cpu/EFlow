@@ -392,31 +392,21 @@ Do not silently ignore validation failures.
 
 The current immediate milestone is:
 
-> AI Command Schema Foundation
+> README / Release Documentation Final Polish
 
-This milestone should establish shared TypeScript types for:
+This milestone is documentation polish for the local-first v1 checkpoint.
 
-- AI command envelope
-- command actor
-- command operations
-- review status
-- lifecycle status
-- provenance
-- evidence
-- implementation state
-- AI-native context export shape
+Do:
 
-This milestone should NOT implement:
+- Update README.md so it reflects the current product.
+- Update HANDOFF.md with the completed checkpoint.
+- Keep the local-first / frontend-only status clear.
+- Keep `node.status` / `edge.status`, `reviewStatus`, `lifecycleStatus`, and `auditLog` distinctions clear.
+- Run `npm run validate:example` and `npm run build`.
 
-- UI import panels
-- command parsing UI
-- command application logic
-- graph mutation behavior
-- lifecycle display UI
-- API server
-- MCP server
-- CLI integration
+Do not:
 
-After this foundation, the next planned milestone can implement local JSON command intake and command application.
-
-Manual Graph Editing remains important, but it should come after the command schema foundation so UI edits, manual edits, and AI commands can eventually converge on the same mutation model.
+- Implement product features.
+- Change React components, schemas, command behavior, workspace persistence, graph generation, or audit semantics.
+- Add backend, database, auth, cloud sync, API, MCP, CLI, repo analyzer, or agent execution.
+- Commit or push unless explicitly instructed.

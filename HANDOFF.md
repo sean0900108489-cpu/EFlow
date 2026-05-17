@@ -1266,3 +1266,51 @@ Known limitations:
 Recommended next milestone:
 
 > README / Release Documentation Final Polish
+
+## Completed Checkpoint: README / Release Documentation Final Polish
+
+This checkpoint prepares EFlow documentation for a local-first v1 checkpoint without changing product behavior.
+
+Files changed:
+
+- `README.md`
+- `AGENTS.md`
+- `HANDOFF.md`
+
+Documented:
+
+- EFlow identity as Engineering Flow Intake and a local-first AI-to-AI Communication & Architecture Sync Hub.
+- Current local-first, frontend-only status and explicit no-backend/no-cloud/no-AI-API boundaries.
+- Quick start, validation, and build commands.
+- Core workflow from structured input through graph generation, review, manual editing, lifecycle tracking, workspace persistence, AI context export, local AI command import, and audit history.
+- Data model roles for `EngineeringFlowInput`, `EngineeringFlowGraph`, nodes, edges, workspace documents, and audit events.
+- Status model distinctions between legacy graph `status`, AI-facing `reviewStatus`, and implementation `lifecycleStatus`.
+- AI-readable `eflow-context/v0.1` export contents and intended downstream agent use.
+- AI-writable `eflow-command/v0.1` local command workflow, supported operations, schema-only operations, and safety rules.
+- Manual graph editing behavior, `manual_edit` provenance, manual summaries, and export/workspace/context visibility.
+- Lifecycle UI surfaces: inspector controls, progress summary, canvas node badges, and lifecycle canvas filters.
+- Audit log behavior and current event coverage.
+- Workspace persistence, Workspace JSON import/export, audit log compatibility, and validation behavior.
+- Built-in Todo Thought Universe example counts.
+- Known limitations and concise roadmap toward deployment link, final regression pass, and v1 tag.
+- Updated the stale AGENTS.md current milestone note to the release documentation milestone while preserving local-first boundaries.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Not required because this checkpoint changed documentation only and did not change UI or code behavior.
+
+Known limitations:
+
+- Deployment/release link still pending.
+- Final regression pass still pending.
+- No backend, cloud sync, API, MCP, or agent execution.
+
+Recommended next milestone:
+
+> Deployment / GitHub Website Link
