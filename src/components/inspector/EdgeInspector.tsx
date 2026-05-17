@@ -31,6 +31,14 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
           <h2>{edge.relationshipType}</h2>
         </div>
       </div>
+      <div className="inspector-quick-actions">
+        <button className="mini-button" type="button" onClick={() => onChange({ status: "confirmed" })}>
+          Confirm edge
+        </button>
+        <button className="danger-button" type="button" onClick={() => onChange({ status: "rejected" })}>
+          Reject edge
+        </button>
+      </div>
       <label className="field">
         <span>Relationship type</span>
         <select

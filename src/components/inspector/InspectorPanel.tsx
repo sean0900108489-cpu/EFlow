@@ -1,9 +1,13 @@
 import type {
+  EFlowWorkspaceDocument,
   EngineeringEdge,
   EngineeringFlowGraph,
   EngineeringFlowInput,
   EngineeringNode,
+  FullAIContext,
 } from "../../types/engineeringFlow";
+import { JsonExportPanel } from "../export/JsonExportPanel";
+import { ReviewPanel } from "../review/ReviewPanel";
 import { EdgeInspector } from "./EdgeInspector";
 import { EmptyInspector } from "./EmptyInspector";
 import { NodeInspector } from "./NodeInspector";
@@ -13,8 +17,15 @@ type InspectorPanelProps = {
   graph: EngineeringFlowGraph | null;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
+  autosaveStatus: string;
+  onSelectNode: (nodeId: string) => void;
+  onSelectEdge: (edgeId: string) => void;
   onUpdateNode: (nodeId: string, patch: Partial<EngineeringNode>) => void;
   onUpdateEdge: (edgeId: string, patch: Partial<EngineeringEdge>) => void;
+  onImportWorkspace: (workspace: EFlowWorkspaceDocument) => void;
+  onImportFullContext: (context: FullAIContext) => void;
+  onImportInput: (input: EngineeringFlowInput) => void;
+  onClearLocalWorkspace: () => void;
 };
 
 export function InspectorPanel({
@@ -22,8 +33,15 @@ export function InspectorPanel({
   graph,
   selectedNodeId,
   selectedEdgeId,
+  autosaveStatus,
+  onSelectNode,
+  onSelectEdge,
   onUpdateNode,
   onUpdateEdge,
+  onImportWorkspace,
+  onImportFullContext,
+  onImportInput,
+  onClearLocalWorkspace,
 }: InspectorPanelProps) {
   const selectedNode = selectedNodeId
     ? graph?.nodes.find((node) => node.id === selectedNodeId) ?? null
@@ -33,12 +51,113 @@ export function InspectorPanel({
     : null;
 
   if (selectedNode) {
-    return <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />;
+    return (
+      <div className="inspector-stack">
+        <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />
+        <ReviewPanel
+          compact
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          onSelectNode={onSelectNode}
+          onSelectEdge={onSelectEdge}
+          onUpdateNode={onUpdateNode}
+          onUpdateEdge={onUpdateEdge}
+        />
+        <JsonExportPanel
+          input={input}
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          autosaveStatus={autosaveStatus}
+          onImportWorkspace={onImportWorkspace}
+          onImportFullContext={onImportFullContext}
+          onImportInput={onImportInput}
+          onClearLocalWorkspace={onClearLocalWorkspace}
+        />
+      </div>
+    );
   }
 
   if (selectedEdge) {
-    return <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />;
+    return (
+      <div className="inspector-stack">
+        <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />
+        <ReviewPanel
+          compact
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          onSelectNode={onSelectNode}
+          onSelectEdge={onSelectEdge}
+          onUpdateNode={onUpdateNode}
+          onUpdateEdge={onUpdateEdge}
+        />
+        <JsonExportPanel
+          input={input}
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          autosaveStatus={autosaveStatus}
+          onImportWorkspace={onImportWorkspace}
+          onImportFullContext={onImportFullContext}
+          onImportInput={onImportInput}
+          onClearLocalWorkspace={onClearLocalWorkspace}
+        />
+      </div>
+    );
   }
 
-  return <EmptyInspector input={input} graph={graph} />;
+  if (graph) {
+    return (
+      <div className="inspector-stack">
+        <EmptyInspector
+          input={input}
+          graph={graph}
+          showExport={false}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          autosaveStatus={autosaveStatus}
+          onImportWorkspace={onImportWorkspace}
+          onImportFullContext={onImportFullContext}
+          onImportInput={onImportInput}
+          onClearLocalWorkspace={onClearLocalWorkspace}
+        />
+        <ReviewPanel
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          onSelectNode={onSelectNode}
+          onSelectEdge={onSelectEdge}
+          onUpdateNode={onUpdateNode}
+          onUpdateEdge={onUpdateEdge}
+        />
+        <JsonExportPanel
+          input={input}
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          autosaveStatus={autosaveStatus}
+          onImportWorkspace={onImportWorkspace}
+          onImportFullContext={onImportFullContext}
+          onImportInput={onImportInput}
+          onClearLocalWorkspace={onClearLocalWorkspace}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <EmptyInspector
+      input={input}
+      graph={graph}
+      selectedNodeId={selectedNodeId}
+      selectedEdgeId={selectedEdgeId}
+      autosaveStatus={autosaveStatus}
+      onImportWorkspace={onImportWorkspace}
+      onImportFullContext={onImportFullContext}
+      onImportInput={onImportInput}
+      onClearLocalWorkspace={onClearLocalWorkspace}
+    />
+  );
 }

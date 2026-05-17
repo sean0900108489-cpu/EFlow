@@ -163,3 +163,14 @@ export type FullAIContext = {
     blockingQuestionNodeIds: string[];
   };
 };
+
+export type EFlowWorkspaceDocument = {
+  schemaVersion: "eflow-workspace/v0.3";
+  appVersion: "0.3";
+  savedAt: string;
+  workspaceName: string;
+  engineeringFlowInput: EngineeringFlowInput;
+  engineeringFlowGraph: EngineeringFlowGraph | null;
+  selectedNodeId?: string | null;
+  selectedEdgeId?: string | null;
+};

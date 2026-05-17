@@ -1,13 +1,37 @@
-import type { EngineeringFlowGraph, EngineeringFlowInput } from "../../types/engineeringFlow";
+import type {
+  EFlowWorkspaceDocument,
+  EngineeringFlowGraph,
+  EngineeringFlowInput,
+  FullAIContext,
+} from "../../types/engineeringFlow";
 import { buildGraphTrustSummary } from "../../lib/trustSummary";
 import { JsonExportPanel } from "../export/JsonExportPanel";
 
 type EmptyInspectorProps = {
   input: EngineeringFlowInput;
   graph: EngineeringFlowGraph | null;
+  showExport?: boolean;
+  selectedNodeId?: string | null;
+  selectedEdgeId?: string | null;
+  autosaveStatus?: string;
+  onImportWorkspace?: (workspace: EFlowWorkspaceDocument) => void;
+  onImportFullContext?: (context: FullAIContext) => void;
+  onImportInput?: (input: EngineeringFlowInput) => void;
+  onClearLocalWorkspace?: () => void;
 };
 
-export function EmptyInspector({ input, graph }: EmptyInspectorProps) {
+export function EmptyInspector({
+  input,
+  graph,
+  showExport = true,
+  selectedNodeId = null,
+  selectedEdgeId = null,
+  autosaveStatus,
+  onImportWorkspace,
+  onImportFullContext,
+  onImportInput,
+  onClearLocalWorkspace,
+}: EmptyInspectorProps) {
   const trustSummary = graph ? buildGraphTrustSummary(graph) : null;
 
   return (
@@ -57,7 +81,19 @@ export function EmptyInspector({ input, graph }: EmptyInspectorProps) {
           </div>
         ) : null}
       </section>
-      <JsonExportPanel input={input} graph={graph} />
+      {showExport ? (
+        <JsonExportPanel
+          input={input}
+          graph={graph}
+          selectedNodeId={selectedNodeId}
+          selectedEdgeId={selectedEdgeId}
+          autosaveStatus={autosaveStatus}
+          onImportWorkspace={onImportWorkspace}
+          onImportFullContext={onImportFullContext}
+          onImportInput={onImportInput}
+          onClearLocalWorkspace={onClearLocalWorkspace}
+        />
+      ) : null}
     </div>
   );
 }

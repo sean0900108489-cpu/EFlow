@@ -31,6 +31,18 @@ export function NodeInspector({ node, onChange }: NodeInspectorProps) {
           <h2>{node.title}</h2>
         </div>
       </div>
+      <div className="inspector-quick-actions">
+        <button className="mini-button" type="button" onClick={() => onChange({ status: "confirmed" })}>
+          Confirm node
+        </button>
+        <button
+          className="mini-button"
+          type="button"
+          onClick={() => onChange({ status: "needs_review" })}
+        >
+          Mark needs review
+        </button>
+      </div>
       <label className="field">
         <span>Title</span>
         <input value={node.title} onChange={(event) => onChange({ title: event.target.value })} />

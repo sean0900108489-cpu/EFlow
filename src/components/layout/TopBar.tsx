@@ -7,6 +7,7 @@ type TopBarProps = {
   graph: EngineeringFlowGraph | null;
   inputDirtySinceGeneration: boolean;
   showRegenerationConfirm: boolean;
+  autosaveStatus: string;
   onLoadExample: () => void;
   onGenerateGraph: () => void;
   onReplaceGraph: () => void;
@@ -18,6 +19,7 @@ export function TopBar({
   graph,
   inputDirtySinceGeneration,
   showRegenerationConfirm,
+  autosaveStatus,
   onLoadExample,
   onGenerateGraph,
   onReplaceGraph,
@@ -37,6 +39,7 @@ export function TopBar({
         ) : (
           <span className="status-indicator">Ready</span>
         )}
+        <span className="status-indicator">{autosaveStatus}</span>
         <button className="button button-secondary" type="button" onClick={onLoadExample}>
           Use Todo Thought Universe Example
         </button>

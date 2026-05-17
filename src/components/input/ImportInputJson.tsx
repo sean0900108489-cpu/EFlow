@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isEngineeringFlowInput } from "../../lib/workspaceValidation";
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 
 type ImportInputJsonProps = {
@@ -17,7 +18,7 @@ export function ImportInputJson({ onImport }: ImportInputJsonProps) {
         throw new Error('Expected schemaVersion "engineering-flow-input/v0".');
       }
 
-      if (!isImportableEngineeringFlowInput(parsed)) {
+      if (!isEngineeringFlowInput(parsed)) {
         throw new Error("JSON is missing required EngineeringFlowInput fields.");
       }
 
@@ -50,26 +51,5 @@ export function ImportInputJson({ onImport }: ImportInputJsonProps) {
       />
       {message ? <p className={`import-message import-${message.type}`}>{message.text}</p> : null}
     </section>
-  );
-}
-
-function isImportableEngineeringFlowInput(
-  input: Partial<EngineeringFlowInput>,
-): input is EngineeringFlowInput {
-  return (
-    input.schemaVersion === "engineering-flow-input/v0" &&
-    typeof input.id === "string" &&
-    typeof input.projectName === "string" &&
-    typeof input.projectIntent === "string" &&
-    typeof input.sourceType === "string" &&
-    typeof input.createdAt === "string" &&
-    typeof input.updatedAt === "string" &&
-    Array.isArray(input.userTypes) &&
-    Array.isArray(input.mainScreens) &&
-    Array.isArray(input.coreFunctions) &&
-    Array.isArray(input.flowSteps) &&
-    Array.isArray(input.dataObjects) &&
-    Array.isArray(input.aiRoles) &&
-    Array.isArray(input.unknowns)
   );
 }
