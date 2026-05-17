@@ -1,0 +1,93 @@
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  gap: 16px;
+}
+
+.top-bar {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(221, 227, 236, 0.86);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
+}
+
+.top-bar-title {
+  min-width: 260px;
+}
+
+.top-bar-title h1 {
+  margin-top: 3px;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  letter-spacing: 0;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(560px, 1.6fr) minmax(330px, 0.95fr);
+  gap: 16px;
+}
+
+.workspace-panel {
+  min-width: 0;
+  min-height: calc(100vh - 132px);
+  max-height: calc(100vh - 132px);
+  overflow: auto;
+  border: 1px solid rgba(221, 227, 236, 0.86);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.left-column,
+.right-column {
+  padding: 16px;
+}
+
+.canvas-column {
+  padding: 12px;
+  overflow: hidden;
+}
+
+@media (max-width: 1180px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .top-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .top-bar-actions {
+    justify-content: flex-start;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-panel {
+    min-height: 560px;
+    max-height: none;
+  }
+}
