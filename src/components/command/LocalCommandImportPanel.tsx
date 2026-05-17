@@ -241,6 +241,11 @@ export function LocalCommandImportPanel({
         Paste an eflow-command/v0.1 JSON command to validate, dry-run, or apply local graph
         updates. This stays in the browser and only changes the current graph after Apply Command.
       </p>
+      <p className="command-interop-note">
+        Accepted schema: <strong>{EFLOW_COMMAND_SCHEMA_VERSION}</strong>. Recommended workflow:
+        Validate -&gt; Dry Run -&gt; Apply. reviewStatus updates confirmation state;
+        lifecycleStatus updates implementation progress.
+      </p>
       {!graph ? (
         <p className="command-note">
           Generate or import an engineering graph before dry-running or applying commands.

@@ -1,5 +1,7 @@
 import {
   EFLOW_COMMAND_SCHEMA_VERSION,
+  EFLOW_NODE_TYPES,
+  EFLOW_RELATIONSHIP_TYPES,
   LIFECYCLE_STATUSES,
   REVIEW_STATUSES,
   type EFlowCommandEdge,
@@ -7,7 +9,10 @@ import {
   type EFlowEvidence,
   type EFlowId,
   type EFlowMetadata,
+  type EFlowNodeType,
+  type EFlowOperation,
   type EFlowProvenance,
+  type EFlowRelationshipType,
   type LifecycleStatus,
   type ReviewStatus,
 } from "../types/eflowCommand";
@@ -21,6 +26,7 @@ import type {
 } from "../types/engineeringFlow";
 import {
   EFLOW_CONTEXT_SCHEMA_VERSION,
+  type EFlowCommandInterfaceDescriptor,
   type EFlowContextExport,
   type EFlowDependencyIndex,
   type EFlowProgressSummary,
@@ -37,6 +43,37 @@ export interface BuildEFlowContextExportArgs {
 }
 
 const DEFAULT_CONTEXT_LIFECYCLE_STATUS: LifecycleStatus = "planned";
+
+const GRAPH_SUPPORTED_NODE_TYPES = [
+  "intent",
+  "user",
+  "screen",
+  "feature",
+  "flow_step",
+  "data_object",
+  "ai_task",
+  "question",
+] as const satisfies readonly EFlowNodeType[];
+
+const GRAPH_SUPPORTED_RELATIONSHIP_TYPES = [
+  "serves",
+  "uses",
+  "leads_to",
+  "contains",
+  "depends_on",
+  "produces",
+  "needs_confirmation",
+  "relates_to",
+] as const satisfies readonly EFlowRelationshipType[];
+
+const GRAPH_SUPPORTED_COMMAND_OPERATIONS = [
+  "updateNode",
+  "transitionNode",
+  "upsertNode",
+  "updateEdge",
+  "transitionEdge",
+  "upsertEdge",
+] as const satisfies readonly EFlowOperation["op"][];
 
 export function buildEFlowContextExport({
   engineeringFlowInput,
@@ -82,16 +119,126 @@ export function buildEFlowContextExport({
     nextDevelopmentTargets: buildNextDevelopmentTargets(contextNodes, dependencyIndex),
     blockingQuestions,
     mermaid: buildMermaidExport(contextNodes, contextEdges),
-    commandInterface: {
-      acceptedSchemaVersions: [EFLOW_COMMAND_SCHEMA_VERSION],
-      preferredOperations: [
-        "updateNode",
-        "transitionNode",
-        "upsertNode",
-        "updateEdge",
-        "transitionEdge",
-        "upsertEdge",
+    commandInterface: buildCommandInterfaceDescriptor(),
+  };
+}
+
+function buildCommandInterfaceDescriptor(): EFlowCommandInterfaceDescriptor {
+  return {
+    acceptedSchemaVersions: [EFLOW_COMMAND_SCHEMA_VERSION],
+    preferredOperations: [...GRAPH_SUPPORTED_COMMAND_OPERATIONS],
+    unsupportedOrSchemaOnlyOperations: [
+      {
+        operation: "addDecision",
+        behavior: "validates as eflow-command/v0.1 schema, but current graph apply rejects it",
+        reason: "EngineeringFlowGraph does not yet have a decision record store.",
+      },
+      {
+        operation: "addQuestion",
+        behavior: "validates as eflow-command/v0.1 schema, but current graph apply rejects it",
+        reason: "EngineeringFlowGraph does not yet have a standalone question record store.",
+      },
+    ],
+    localWorkflow: [
+      {
+        step: "validate",
+        description: "Parse JSON and validate the eflow-command/v0.1 envelope before graph checks.",
+        mutatesGraph: false,
+      },
+      {
+        step: "dry_run",
+        description: "Run graph compatibility and safety checks without changing the current graph.",
+        mutatesGraph: false,
+      },
+      {
+        step: "apply",
+        description: "Apply the command to the current local graph only after validation succeeds.",
+        mutatesGraph: true,
+      },
+    ],
+    safetyRules: [
+      {
+        code: "dry_run_does_not_mutate_graph",
+        description: "Dry-run returns the original graph and does not write graph changes.",
+      },
+      {
+        code: "failed_operations_do_not_partially_apply",
+        description: "If any operation fails, no changed graph is returned for apply.",
+      },
+      {
+        code: "missing_references_are_rejected",
+        description: "Node updates require an existing node; edge upserts require existing source and target nodes.",
+      },
+      {
+        code: "self_edges_are_rejected",
+        description: "Edge upserts cannot connect a node to itself.",
+      },
+      {
+        code: "duplicate_exact_edges_are_prevented",
+        description: "A second edge with the same source, target, and relationshipType is rejected.",
+      },
+      {
+        code: "unsupported_node_or_relationship_types_are_rejected",
+        description: "Schema-valid types outside the current EngineeringFlowGraph model fail graph apply.",
+      },
+    ],
+    statusMapping: {
+      commandReviewStatusToGraphStatus:
+        "command reviewStatus maps to legacy node.status / edge.status when the legacy graph field can represent it",
+      graphStatusToContextReviewStatus:
+        "legacy node.status / edge.status maps to context graph reviewStatus for AI-readable export",
+      lifecycleStatus:
+        "lifecycleStatus remains separate implementation progress state and never substitutes for reviewStatus/status",
+      unsupportedReviewStatusMappings: [
+        {
+          scope: "node",
+          reviewStatus: "rejected",
+          behavior: "rejected at graph apply because legacy node.status cannot represent rejected",
+        },
+        {
+          scope: "edge",
+          reviewStatus: "needs_review",
+          behavior: "rejected at graph apply because legacy edge.status cannot represent needs_review",
+        },
       ],
+    },
+    defaultingRules: [
+      {
+        field: "node.lifecycleStatus",
+        defaultValue: DEFAULT_CONTEXT_LIFECYCLE_STATUS,
+        behavior:
+          "missing lifecycleStatus is treated as planned in AI context, canvas badges, filters, and summaries",
+        writesBack: false,
+      },
+      {
+        field: "edge.lifecycleStatus",
+        defaultValue: DEFAULT_CONTEXT_LIFECYCLE_STATUS,
+        behavior: "missing lifecycleStatus is treated as planned in AI context and summaries",
+        writesBack: false,
+      },
+    ],
+    auditBehavior: [
+      {
+        path: "local_command_import_ui",
+        eventType: "ai_command_applied",
+        behavior: "successful apply mode records a compact audit event through the UI path",
+      },
+      {
+        path: "headless_apply_helper",
+        behavior: "headless apply returns graph changes but does not append audit events by itself",
+      },
+    ],
+    graphCompatibility: {
+      supportedNodeTypes: [...GRAPH_SUPPORTED_NODE_TYPES],
+      unsupportedSchemaNodeTypes: EFLOW_NODE_TYPES.filter(
+        (type) => !(GRAPH_SUPPORTED_NODE_TYPES as readonly string[]).includes(type),
+      ),
+      supportedRelationshipTypes: [...GRAPH_SUPPORTED_RELATIONSHIP_TYPES],
+      unsupportedSchemaRelationshipTypes: EFLOW_RELATIONSHIP_TYPES.filter(
+        (type) => !(GRAPH_SUPPORTED_RELATIONSHIP_TYPES as readonly string[]).includes(type),
+      ),
+      unsupportedTypeBehavior:
+        "Schema-valid node and relationship types outside the current graph model are rejected during graph apply.",
     },
   };
 }

@@ -28,6 +28,9 @@ export function EFlowContextExportPanel({ input, graph }: EFlowContextExportPane
     contextExport?.progressSummary.nodesByLifecycle.completed.length ?? 0;
   const acceptedCommandSchema =
     contextExport?.commandInterface.acceptedSchemaVersions.join(", ") ?? "eflow-command/v0.1";
+  const commandWorkflow =
+    contextExport?.commandInterface.localWorkflow.map((step) => formatWorkflowStep(step.step)).join(" -> ") ??
+    "Validate -> Dry Run -> Apply";
 
   function downloadContextJson() {
     if (!contextExport) return;
@@ -90,6 +93,10 @@ export function EFlowContextExportPanel({ input, graph }: EFlowContextExportPane
           <p className="context-command-schema">
             Accepted command schema: <strong>{acceptedCommandSchema}</strong>
           </p>
+          <p className="context-interop-note">
+            Downstream agents should write commands through {commandWorkflow}. reviewStatus maps
+            to confirmation state; lifecycleStatus remains implementation progress.
+          </p>
           <div className="export-actions">
             <CopyJsonButton label="Copy AI Context JSON" value={contextExport} />
             <button className="button button-secondary" type="button" onClick={downloadContextJson}>
@@ -115,4 +122,9 @@ function makeContextFilename(projectName: string): string {
     .slice(0, 72);
 
   return `eflow-context-${safeName || "project"}.json`;
+}
+
+function formatWorkflowStep(step: string): string {
+  if (step === "dry_run") return "Dry Run";
+  return step.charAt(0).toUpperCase() + step.slice(1);
 }

@@ -920,10 +920,22 @@
 }
 
 .command-helper,
-.command-note {
+.command-note,
+.command-interop-note {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.5;
+}
+
+.command-interop-note {
+  padding: 8px 10px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 8px;
+  background: var(--blue-soft);
+}
+
+.command-interop-note strong {
+  color: var(--text);
 }
 
 .command-note {
@@ -1048,15 +1060,24 @@
 }
 
 .context-command-schema,
+.context-interop-note,
 .context-empty-note {
   color: var(--muted);
   font-size: 0.84rem;
   line-height: 1.5;
 }
 
-.context-command-schema strong {
+.context-command-schema strong,
+.context-interop-note strong {
   color: var(--text);
   overflow-wrap: anywhere;
+}
+
+.context-interop-note {
+  padding: 8px 10px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 8px;
+  background: var(--blue-soft);
 }
 
 .workspace-helper {

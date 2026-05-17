@@ -4,8 +4,11 @@ import type {
   EFlowEvidence,
   EFlowId,
   EFlowMetadata,
+  EFlowNodeType,
+  EFlowOperation,
   ISODateTimeString,
   LifecycleStatus,
+  EFlowRelationshipType,
   ReviewStatus,
 } from "./eflowCommand";
 
@@ -98,9 +101,71 @@ export interface EFlowMermaidExport {
   stateDiagram?: string;
 }
 
+export type EFlowCommandOperationName = EFlowOperation["op"];
+
+export type EFlowLocalCommandWorkflowStep = "validate" | "dry_run" | "apply";
+
+export interface EFlowLocalCommandWorkflowDescriptor {
+  step: EFlowLocalCommandWorkflowStep;
+  description: string;
+  mutatesGraph: boolean;
+}
+
+export interface EFlowUnsupportedOperationDescriptor {
+  operation: EFlowCommandOperationName;
+  behavior: string;
+  reason?: string;
+}
+
+export interface EFlowCommandSafetyRuleDescriptor {
+  code: string;
+  description: string;
+}
+
+export interface EFlowUnsupportedReviewStatusMapping {
+  scope: "node" | "edge";
+  reviewStatus: ReviewStatus;
+  behavior: string;
+}
+
+export interface EFlowCommandStatusMappingDescriptor {
+  commandReviewStatusToGraphStatus: string;
+  graphStatusToContextReviewStatus: string;
+  lifecycleStatus: string;
+  unsupportedReviewStatusMappings: EFlowUnsupportedReviewStatusMapping[];
+}
+
+export interface EFlowCommandDefaultingRuleDescriptor {
+  field: string;
+  defaultValue: string;
+  behavior: string;
+  writesBack: boolean;
+}
+
+export interface EFlowCommandAuditBehaviorDescriptor {
+  path: string;
+  behavior: string;
+  eventType?: string;
+}
+
+export interface EFlowCommandGraphCompatibilityDescriptor {
+  supportedNodeTypes: EFlowNodeType[];
+  unsupportedSchemaNodeTypes: EFlowNodeType[];
+  supportedRelationshipTypes: EFlowRelationshipType[];
+  unsupportedSchemaRelationshipTypes: EFlowRelationshipType[];
+  unsupportedTypeBehavior: string;
+}
+
 export interface EFlowCommandInterfaceDescriptor {
   acceptedSchemaVersions: string[];
-  preferredOperations: string[];
+  preferredOperations: EFlowCommandOperationName[];
+  unsupportedOrSchemaOnlyOperations: EFlowUnsupportedOperationDescriptor[];
+  localWorkflow: EFlowLocalCommandWorkflowDescriptor[];
+  safetyRules: EFlowCommandSafetyRuleDescriptor[];
+  statusMapping: EFlowCommandStatusMappingDescriptor;
+  defaultingRules: EFlowCommandDefaultingRuleDescriptor[];
+  auditBehavior: EFlowCommandAuditBehaviorDescriptor[];
+  graphCompatibility: EFlowCommandGraphCompatibilityDescriptor;
 }
 
 export interface EFlowContextExport {

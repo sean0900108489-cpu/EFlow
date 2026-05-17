@@ -1125,3 +1125,74 @@ Known limitations:
 Recommended next milestone:
 
 > AI Context / Command Interop Polish
+
+## Completed Checkpoint: AI Context / Command Interop Polish
+
+This checkpoint makes the existing local-first AI-read and AI-write contract clearer, safer, and more self-documenting without changing command apply semantics or adding backend/tooling.
+
+Files changed:
+
+- `README.md`
+- `src/types/eflowContext.ts`
+- `src/lib/buildEflowContextExport.ts`
+- `src/components/export/EFlowContextExportPanel.tsx`
+- `src/components/command/LocalCommandImportPanel.tsx`
+- `src/styles/components.css`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+Implemented:
+
+- Expanded `eflow-context/v0.1` `commandInterface` metadata while keeping the schema version unchanged.
+- Documented accepted command schemas through `acceptedSchemaVersions`.
+- Documented graph-supported write operations through `preferredOperations`: `updateNode`, `transitionNode`, `upsertNode`, `updateEdge`, `transitionEdge`, and `upsertEdge`.
+- Documented schema-only operations through `unsupportedOrSchemaOnlyOperations`: `addDecision` and `addQuestion` validate as command schema concepts but are rejected by current graph apply helpers.
+- Documented the local command workflow as `validate`, `dry_run`, then `apply`, including which steps mutate graph state.
+- Documented command safety rules for dry-run immutability, failed-operation rollback behavior, missing references, self-edges, duplicate exact edges, and unsupported graph types.
+- Documented status mapping: command `reviewStatus` maps to legacy graph `node.status` / `edge.status` when representable, graph `status` maps back to context `reviewStatus`, and `lifecycleStatus` remains separate implementation progress state.
+- Documented unsupported review-status mappings: node `rejected` and edge `needs_review` cannot currently be represented by the legacy graph status unions.
+- Documented lifecycle defaulting: missing node/edge `lifecycleStatus` is treated as `planned` in context/display/summary paths without writing back.
+- Documented audit behavior: successful command apply records `ai_command_applied` through the Local Command Import UI path, while the headless apply helper does not append audit events by itself.
+- Documented current graph compatibility limits for schema-valid node and relationship types that are not supported by `EngineeringFlowGraph`.
+- Added compact UI guidance to AI-Native Context Export and Local Command Import panels.
+- Updated README with current EFlow identity, AI read/write contracts, local workflow, status model, workspace/audit behavior, and current limitations.
+- Added validation coverage for the new command interop metadata in `scripts/validateExample.ts`.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check:
+
+- Passed against `http://127.0.0.1:5173`.
+- Loaded Todo Thought Universe example and generated the engineering flow.
+- Confirmed AI-Native Context Export still works and copied `eflow-context/v0.1` JSON.
+- Confirmed `commandInterface` includes accepted schema, supported operations, schema-only operations, workflow metadata, safety rules, status mapping, lifecycle defaulting, audit behavior, and graph compatibility limits.
+- Confirmed AI Context Export UI guidance appears.
+- Confirmed Local Command Import UI and guidance appear.
+- Inserted the example command.
+- Validated the command.
+- Dry-ran the command and confirmed graph state was not changed.
+- Applied the command and confirmed graph state updated.
+- Confirmed `ai_command_applied` audit event was recorded through Workspace JSON.
+- Confirmed Lifecycle Progress Summary updated.
+- Confirmed canvas lifecycle badges still work.
+- Confirmed lifecycle canvas filters still work.
+- Confirmed Workspace JSON export/import still works.
+- Confirmed no backend, API, MCP, CLI, real AI API, repo analyzer, or agent execution was added.
+
+Known limitations:
+
+- No MCP server, REST API, CLI, backend, database, auth, cloud sync, real AI API, repo analyzer, or agent execution.
+- `addDecision` and `addQuestion` remain schema-only for now and are rejected by graph apply helpers.
+- Expanded schema node/relationship types outside the current legacy graph model remain rejected during graph apply.
+- Node `reviewStatus: "rejected"` and edge `reviewStatus: "needs_review"` remain unsupported by the legacy graph status fields.
+- Audit remains compact local workspace history, not undo, replay, conflict resolution, or a signed/tamper-proof event store.
+- Edge lifecycle badges and edge lifecycle filters are still not implemented.
+- Canvas direct editing and drag-to-create are still not implemented.
+
+Recommended next milestone:
+
+> Deployment / Release Readiness Notes

@@ -40,6 +40,7 @@ import {
   REVIEW_STATUSES,
   type EFlowCommandEnvelope,
 } from "../src/types/eflowCommand";
+import { EFLOW_CONTEXT_SCHEMA_VERSION } from "../src/types/eflowContext";
 import {
   EFLOW_AUDIT_EVENT_TYPES,
   EFLOW_AUDIT_SCHEMA_VERSION,
@@ -198,7 +199,7 @@ assert.equal(
   "example graph should have 3 blocking questions",
 );
 
-assert.equal(eflowContext.schemaVersion, "eflow-context/v0.1");
+assert.equal(eflowContext.schemaVersion, EFLOW_CONTEXT_SCHEMA_VERSION);
 assert.ok(eflowContext.generatedAt, "EFlow context should include generatedAt");
 assert.equal(
   eflowContext.project.name,
@@ -324,6 +325,113 @@ assert.ok(eflowContext.mermaid?.flowchart, "EFlow context should include Mermaid
 assert.ok(
   eflowContext.commandInterface.acceptedSchemaVersions.includes(EFLOW_COMMAND_SCHEMA_VERSION),
   "EFlow context should advertise accepted command schema version",
+);
+assert.deepEqual(
+  eflowContext.commandInterface.preferredOperations,
+  [
+    "updateNode",
+    "transitionNode",
+    "upsertNode",
+    "updateEdge",
+    "transitionEdge",
+    "upsertEdge",
+  ],
+  "EFlow context should document graph-supported command operations",
+);
+assert.deepEqual(
+  eflowContext.commandInterface.unsupportedOrSchemaOnlyOperations.map((operation) => operation.operation),
+  ["addDecision", "addQuestion"],
+  "EFlow context should document schema-only operations",
+);
+assert.deepEqual(
+  eflowContext.commandInterface.localWorkflow.map((step) => step.step),
+  ["validate", "dry_run", "apply"],
+  "EFlow context should document the local command workflow",
+);
+assert.deepEqual(
+  eflowContext.commandInterface.localWorkflow.map((step) => step.mutatesGraph),
+  [false, false, true],
+  "EFlow context should document which command workflow steps mutate graph state",
+);
+const commandSafetyRuleCodes = eflowContext.commandInterface.safetyRules.map((rule) => rule.code);
+for (const code of [
+  "dry_run_does_not_mutate_graph",
+  "failed_operations_do_not_partially_apply",
+  "missing_references_are_rejected",
+  "self_edges_are_rejected",
+  "duplicate_exact_edges_are_prevented",
+  "unsupported_node_or_relationship_types_are_rejected",
+]) {
+  assert.ok(
+    commandSafetyRuleCodes.includes(code),
+    `EFlow context commandInterface safetyRules should include ${code}`,
+  );
+}
+assert.ok(
+  eflowContext.commandInterface.statusMapping.commandReviewStatusToGraphStatus.includes("node.status"),
+  "statusMapping should document command reviewStatus to graph status mapping",
+);
+assert.ok(
+  eflowContext.commandInterface.statusMapping.graphStatusToContextReviewStatus.includes("context"),
+  "statusMapping should document graph status to context reviewStatus mapping",
+);
+assert.ok(
+  eflowContext.commandInterface.statusMapping.lifecycleStatus.includes("separate"),
+  "statusMapping should document lifecycleStatus as separate state",
+);
+assert.ok(
+  eflowContext.commandInterface.statusMapping.unsupportedReviewStatusMappings.some(
+    (mapping) => mapping.scope === "node" && mapping.reviewStatus === "rejected",
+  ),
+  "statusMapping should document unsupported node rejected mapping",
+);
+assert.ok(
+  eflowContext.commandInterface.statusMapping.unsupportedReviewStatusMappings.some(
+    (mapping) => mapping.scope === "edge" && mapping.reviewStatus === "needs_review",
+  ),
+  "statusMapping should document unsupported edge needs_review mapping",
+);
+assert.ok(
+  eflowContext.commandInterface.defaultingRules.some(
+    (rule) =>
+      rule.field === "node.lifecycleStatus" &&
+      rule.defaultValue === "planned" &&
+      rule.writesBack === false,
+  ),
+  "commandInterface should document node lifecycleStatus defaulting",
+);
+assert.ok(
+  eflowContext.commandInterface.defaultingRules.some(
+    (rule) =>
+      rule.field === "edge.lifecycleStatus" &&
+      rule.defaultValue === "planned" &&
+      rule.writesBack === false,
+  ),
+  "commandInterface should document edge lifecycleStatus defaulting",
+);
+assert.ok(
+  eflowContext.commandInterface.auditBehavior.some(
+    (behavior) =>
+      behavior.path === "local_command_import_ui" &&
+      behavior.eventType === "ai_command_applied",
+  ),
+  "commandInterface should document UI audit behavior for applied commands",
+);
+assert.ok(
+  eflowContext.commandInterface.graphCompatibility.supportedNodeTypes.includes("feature"),
+  "graphCompatibility should document supported graph node types",
+);
+assert.ok(
+  eflowContext.commandInterface.graphCompatibility.unsupportedSchemaNodeTypes.includes("api_endpoint"),
+  "graphCompatibility should document unsupported schema node types",
+);
+assert.ok(
+  eflowContext.commandInterface.graphCompatibility.supportedRelationshipTypes.includes("relates_to"),
+  "graphCompatibility should document supported graph relationship types",
+);
+assert.ok(
+  eflowContext.commandInterface.graphCompatibility.unsupportedSchemaRelationshipTypes.includes("blocks"),
+  "graphCompatibility should document unsupported schema relationship types",
 );
 
 assert.ok(isEFlowWorkspaceDocument(workspace), "workspace document should validate");
