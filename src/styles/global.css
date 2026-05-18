@@ -1,31 +1,62 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1d2633;
-  background: #f6f7f9;
+  color: #eefcff;
+  background: #061015;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --bg: #f6f7f9;
-  --panel: rgba(255, 255, 255, 0.92);
-  --panel-solid: #ffffff;
-  --line: #dde3ec;
-  --line-strong: #c9d2df;
-  --text: #1d2633;
-  --muted: #637085;
-  --muted-soft: #8792a4;
-  --blue: #2563eb;
-  --blue-soft: #eef4ff;
-  --green: #16835d;
-  --green-soft: #eaf7f1;
-  --amber: #9a6515;
-  --amber-soft: #fff5df;
-  --red: #b42318;
-  --red-soft: #fff0ed;
-  --violet: #6d4aff;
-  --shadow: 0 18px 50px rgba(33, 43, 58, 0.08);
-  --shadow-soft: 0 10px 30px rgba(33, 43, 58, 0.06);
+  --city-bg-0: #03070c;
+  --city-bg-1: #06131b;
+  --city-bg-2: #08242a;
+  --city-sky-cyan: #8ff8ff;
+  --city-glass: rgba(7, 28, 38, 0.74);
+  --city-glass-strong: rgba(9, 38, 51, 0.9);
+  --city-border: rgba(172, 235, 241, 0.28);
+  --city-border-strong: rgba(205, 252, 255, 0.46);
+  --city-border-hot: rgba(255, 92, 43, 0.66);
+  --city-text: #effcff;
+  --city-text-muted: #a9c7d0;
+  --city-text-soft: #7898a5;
+  --city-orange: #ff5b2f;
+  --city-orange-soft: rgba(255, 91, 47, 0.15);
+  --city-cyan: #70efff;
+  --city-cyan-soft: rgba(112, 239, 255, 0.14);
+  --city-green: #52e3ac;
+  --city-green-soft: rgba(82, 227, 172, 0.14);
+  --city-red: #ff6a62;
+  --city-red-soft: rgba(255, 106, 98, 0.14);
+  --city-amber: #ffb24b;
+  --city-amber-soft: rgba(255, 178, 75, 0.15);
+  --city-shadow-soft: 0 18px 56px rgba(0, 0, 0, 0.28);
+  --city-shadow-strong: 0 28px 96px rgba(0, 0, 0, 0.44);
+  --city-glow-cyan: 0 0 0 1px rgba(112, 239, 255, 0.14), 0 18px 56px rgba(39, 190, 205, 0.13);
+  --city-glow-orange: 0 0 0 1px rgba(255, 91, 47, 0.18), 0 16px 44px rgba(255, 91, 47, 0.22);
+  --city-radius-sm: 6px;
+  --city-radius-md: 8px;
+  --city-radius-lg: 14px;
+  --city-radius-xl: 18px;
+  --city-blur: 18px;
+  --bg: var(--city-bg-0);
+  --panel: var(--city-glass);
+  --panel-solid: #0a202a;
+  --line: var(--city-border);
+  --line-strong: var(--city-border-strong);
+  --text: var(--city-text);
+  --muted: var(--city-text-muted);
+  --muted-soft: var(--city-text-soft);
+  --blue: var(--city-cyan);
+  --blue-soft: var(--city-cyan-soft);
+  --green: var(--city-green);
+  --green-soft: var(--city-green-soft);
+  --amber: var(--city-amber);
+  --amber-soft: var(--city-amber-soft);
+  --red: var(--city-red);
+  --red-soft: var(--city-red-soft);
+  --violet: #b6a4ff;
+  --shadow: var(--city-shadow-strong);
+  --shadow-soft: var(--city-shadow-soft);
 }
 
 * {
@@ -41,9 +72,16 @@ body,
 }
 
 body {
+  color: var(--text);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(246, 247, 249, 0.94)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(112, 239, 255, 0.07), transparent 34%),
+    radial-gradient(ellipse at 50% 12%, rgba(112, 239, 255, 0.22), transparent 48%),
+    radial-gradient(ellipse at 18% 8%, rgba(255, 91, 47, 0.12), transparent 34%),
+    linear-gradient(180deg, #041018 0%, #071721 44%, #03070c 100%),
     var(--bg);
+  background-attachment: fixed;
+  background-size: 96px 100%, auto, auto, auto, auto;
 }
 
 button,
@@ -54,6 +92,7 @@ select {
 }
 
 button {
+  color: inherit;
   cursor: pointer;
 }
 
@@ -68,9 +107,12 @@ select {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--city-radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    rgba(3, 14, 20, 0.82);
   color: var(--text);
+  caret-color: var(--city-orange);
   outline: none;
   transition:
     border-color 140ms ease,
@@ -93,8 +135,23 @@ textarea {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: rgba(37, 99, 235, 0.64);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  border-color: rgba(112, 239, 255, 0.72);
+  box-shadow:
+    0 0 0 3px rgba(112, 239, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(112, 239, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(4, 18, 26, 0.94);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(169, 199, 208, 0.62);
+}
+
+select option {
+  color: var(--city-text);
+  background: #081923;
 }
 
 h1,
@@ -106,4 +163,32 @@ p {
 
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+::selection {
+  color: #fff;
+  background: rgba(255, 91, 47, 0.52);
+}
+
+* {
+  scrollbar-color: rgba(112, 239, 255, 0.42) rgba(3, 12, 18, 0.52);
+}
+
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(3, 12, 18, 0.42);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid rgba(3, 12, 18, 0.42);
+  border-radius: 999px;
+  background: rgba(112, 239, 255, 0.34);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 91, 47, 0.56);
 }
