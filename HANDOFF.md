@@ -22,7 +22,7 @@ EFlow 是 local-first、schema-first 的 AI-to-AI Communication & Architecture S
 - `eflow-command/v0.1` Local Command Import with Validate -> Dry Run -> Apply。
 - `eflow-audit/v0.1` compact local Change History。
 - Optional AI Collaboration Console using personal BYOK direct-browser requests。
-- Lightweight tutorial mode and `zh-TW` / `en` display-label localization foundation。
+- Lightweight tutorial mode, `/tutorial` owner workflow guide, and `zh-TW` / `en` display-label localization foundation。
 
 AI Chat 是 optional and draft-only。它不會 mutate graph state，不會 auto-apply commands，也不應被當成 project truth。
 
