@@ -1,3 +1,4 @@
+import { useLanguage } from "../../lib/i18n/language-context";
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 import { AiRolesEditor } from "./AiRolesEditor";
 import { CoreFunctionsEditor } from "./CoreFunctionsEditor";
@@ -22,8 +23,17 @@ export function StructuredInputPanel({
   onChange,
   onImport,
 }: StructuredInputPanelProps) {
+  const { t } = useLanguage();
+
   return (
-    <div className="structured-input-panel">
+    <div
+      className="structured-input-panel"
+      data-tour="structured-input"
+      data-tour-step="3"
+      data-tour-title={t("tour.structuredInput.title")}
+      data-tour-body={t("tour.structuredInput.body")}
+      data-tour-position="right"
+    >
       <ProjectIntentEditor input={input} onChange={onChange} />
       {inputDirtySinceGeneration ? (
         <div className="dirty-note">Input changed. Generate again to refresh graph.</div>

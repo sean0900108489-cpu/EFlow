@@ -16,6 +16,7 @@ import { ManualContextSummary } from "../graphEditing/ManualContextSummary";
 import { CollapsibleSection } from "../layout/CollapsibleSection";
 import { LifecycleProgressSummary } from "../lifecycle/LifecycleProgressSummary";
 import { ReviewPanel } from "../review/ReviewPanel";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { EdgeInspector } from "./EdgeInspector";
 import { EmptyInspector } from "./EmptyInspector";
 import { NodeInspector } from "./NodeInspector";
@@ -57,6 +58,7 @@ export function InspectorPanel({
   onImportInput,
   onClearLocalWorkspace,
 }: InspectorPanelProps) {
+  const { t } = useLanguage();
   const selectedNode = selectedNodeId
     ? graph?.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
@@ -105,6 +107,13 @@ export function InspectorPanel({
           subtitle="Confirm generated nodes and relationships."
           meta="Queue"
           defaultOpen
+          tour={{
+            id: "inspector-review",
+            step: "5",
+            title: t("tour.review.title"),
+            body: t("tour.review.body"),
+            position: "left",
+          }}
         >
           <ReviewPanel
             compact={Boolean(selectedNode || selectedEdge)}
@@ -159,6 +168,13 @@ export function InspectorPanel({
           title="AI Interop"
           subtitle="Local command intake and AI-native context."
           meta="JSON"
+          tour={{
+            id: "ai-interop",
+            step: "6",
+            title: t("tour.aiInterop.title"),
+            body: t("tour.aiInterop.body"),
+            position: "left",
+          }}
         >
           <LocalCommandImportPanel
             graph={graph}
@@ -185,6 +201,13 @@ export function InspectorPanel({
           title="Workspace / Export"
           subtitle="Workspace persistence and legacy JSON handoffs."
           meta="Files"
+          tour={{
+            id: "workspace-export",
+            step: "7",
+            title: t("tour.workspaceExport.title"),
+            body: t("tour.workspaceExport.body"),
+            position: "left",
+          }}
         >
           <JsonExportPanel
             input={input}
@@ -211,6 +234,13 @@ export function InspectorPanel({
         subtitle="Project summary before graph generation."
         meta="Project"
         defaultOpen
+        tour={{
+          id: "inspector-review",
+          step: "5",
+          title: t("tour.review.title"),
+          body: t("tour.review.body"),
+          position: "left",
+        }}
       >
         <EmptyInspector
           input={input}
@@ -239,6 +269,13 @@ export function InspectorPanel({
         title="AI Interop"
         subtitle="Validate local commands and prepare AI context."
         meta="JSON"
+        tour={{
+          id: "ai-interop",
+          step: "6",
+          title: t("tour.aiInterop.title"),
+          body: t("tour.aiInterop.body"),
+          position: "left",
+        }}
       >
         <LocalCommandImportPanel
           graph={graph}
@@ -265,6 +302,13 @@ export function InspectorPanel({
         title="Workspace / Export"
         subtitle="Import, restore, and export workspace JSON."
         meta="Files"
+        tour={{
+          id: "workspace-export",
+          step: "7",
+          title: t("tour.workspaceExport.title"),
+          body: t("tour.workspaceExport.body"),
+          position: "left",
+        }}
       >
         <JsonExportPanel
           input={input}

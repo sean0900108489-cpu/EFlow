@@ -15,6 +15,7 @@ import {
   type LifecycleStatus,
 } from "../../types/eflowCommand";
 import { toReactFlowEdges, toReactFlowNodes } from "../../lib/graphAdapters";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { EngineeringNodeCard } from "./EngineeringNodeCard";
 
 type EngineeringFlowCanvasProps = {
@@ -88,6 +89,7 @@ export function EngineeringFlowCanvas({
   onClearSelection,
   onNodePositionChange,
 }: EngineeringFlowCanvasProps) {
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<CanvasFilter>("all");
   const [activeLifecycleFilter, setActiveLifecycleFilter] =
     useState<LifecycleCanvasFilter>("all");
@@ -158,7 +160,14 @@ export function EngineeringFlowCanvas({
 
   if (!graph) {
     return (
-      <div className="canvas-empty-state">
+      <div
+        className="canvas-empty-state"
+        data-tour="engineering-canvas"
+        data-tour-step="4"
+        data-tour-title={t("tour.canvas.title")}
+        data-tour-body={t("tour.canvas.body")}
+        data-tour-position="bottom"
+      >
         <p className="eyebrow">Canvas</p>
         <h2>Generate an engineering flow</h2>
         <p>
@@ -198,7 +207,14 @@ export function EngineeringFlowCanvas({
 
   return (
     <ReactFlowProvider>
-      <div className="canvas-frame">
+      <div
+        className="canvas-frame"
+        data-tour="engineering-canvas"
+        data-tour-step="4"
+        data-tour-title={t("tour.canvas.title")}
+        data-tour-body={t("tour.canvas.body")}
+        data-tour-position="bottom"
+      >
         <div className="canvas-heading">
           <div>
             <p className="eyebrow">Engineering Flow Canvas</p>

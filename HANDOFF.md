@@ -1532,3 +1532,47 @@ Known limitations:
 Next recommended milestone:
 
 > Demand Compiler Schema Foundation
+
+## Completed Checkpoint: Lightweight Tutorial Mode And i18n Foundation
+
+This checkpoint adds a CSS-only tutorial annotation mode and a minimal bilingual UI foundation while preserving EFlow's local-first graph, workspace, audit, command, and AI context boundaries.
+
+Files changed:
+
+- `src/main.tsx`
+- `src/App.tsx`
+- `src/components/layout/AppShell.tsx`
+- `src/components/layout/TopBar.tsx`
+- `src/components/layout/CollapsibleSection.tsx`
+- `src/components/aiChat/AIChatConsole.tsx`
+- `src/components/input/StructuredInputPanel.tsx`
+- `src/components/graph/EngineeringFlowCanvas.tsx`
+- `src/components/inspector/InspectorPanel.tsx`
+- `src/components/language/LanguageSwitcher.tsx`
+- `src/components/tutorial/TutorialPage.tsx`
+- `src/lib/i18n/types.ts`
+- `src/lib/i18n/translations.ts`
+- `src/lib/i18n/translate.ts`
+- `src/lib/i18n/language-context.tsx`
+- `src/styles/tutorial.css`
+- `scripts/validateExample.ts`
+- `README.md`
+- `HANDOFF.md`
+
+What was implemented:
+
+- `/` remains the normal app route.
+- `/?tour=1` renders the normal app with the `tutorial-mode` class on the app shell.
+- `/tutorial` renders a standalone tutorial page inside the Vite SPA.
+- Added CSS-only tour markers and hover/focus cards using `data-tour`, `data-tour-step`, `data-tour-title`, `data-tour-body`, and optional `data-tour-position`.
+- Added the first tour markers for top bar project actions, AI Collaboration Console, Structured Input Panel, Engineering Flow Canvas, Inspector / Review, AI Interop, and Workspace / Export.
+- Added a global language provider with `zh-TW` and `en`, defaulting to `zh-TW`.
+- Added `LanguageSwitcher` to the top bar and tutorial page.
+- Stored UI language preference in `localStorage` under `eflow.ui.locale`.
+- Updated `document.documentElement.lang` to `zh-Hant` for `zh-TW` and `en` for English.
+
+Boundary notes:
+
+- Tutorial and language state remain UI-only.
+- No graph schema, workspace schema, AI command schema, AI context export, command apply behavior, or audit semantics were changed.
+- No third-party tutorial package, router, backend, API, cloud, auth, database, MCP, or CLI was added.

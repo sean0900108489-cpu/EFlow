@@ -6,8 +6,11 @@ import { AppShell } from "./components/layout/AppShell";
 import { TopBar } from "./components/layout/TopBar";
 import { Workspace } from "./components/layout/Workspace";
 import { InspectorPanel } from "./components/inspector/InspectorPanel";
+import { TutorialPage } from "./components/tutorial/TutorialPage";
 import { emptyEngineeringFlowInput } from "./data/emptyEngineeringFlowInput";
 import { todoThoughtUniverseExample } from "./data/todoThoughtUniverseExample";
+import { useLanguage } from "./lib/i18n/language-context";
+import type { TranslationKey, TranslationValues } from "./lib/i18n/types";
 import {
   appendAuditEvent,
   createAuditEvent,
@@ -37,8 +40,42 @@ function cloneInput(input: EngineeringFlowInput): EngineeringFlowInput {
 }
 
 type ImportAuditEventType = "workspace_imported" | "full_ai_context_imported";
+type Translate = (key: TranslationKey, values?: TranslationValues) => string;
+type AutosaveStatus =
+  | { key: "app.autosave.unavailable" }
+  | { key: "app.autosave.ready" }
+  | { key: "app.autosave.restored"; time: string }
+  | { key: "app.autosave.saved"; time: string }
+  | { key: "app.autosave.inputImported" }
+  | { key: "app.autosave.workspaceImported"; time: string }
+  | { key: "app.autosave.fullContextImported" }
+  | { key: "app.autosave.cleared" };
 
 export default function App() {
+  const [route, setRoute] = useState(() => readAppRoute());
+
+  useEffect(() => {
+    function updateRoute() {
+      setRoute(readAppRoute());
+    }
+
+    window.addEventListener("popstate", updateRoute);
+    return () => window.removeEventListener("popstate", updateRoute);
+  }, []);
+
+  if (route.pathname === "/tutorial") {
+    return <TutorialPage />;
+  }
+
+  return <WorkspaceApp tutorialMode={route.tutorialMode} />;
+}
+
+type WorkspaceAppProps = {
+  tutorialMode: boolean;
+};
+
+function WorkspaceApp({ tutorialMode }: WorkspaceAppProps) {
+  const { t } = useLanguage();
   const [restoredWorkspace] = useState(() => loadWorkspaceFromLocalStorage());
   const restoredSelection = getValidWorkspaceSelection(restoredWorkspace);
   const [engineeringFlowInput, setEngineeringFlowInput] = useState<EngineeringFlowInput>(() =>
@@ -54,15 +91,21 @@ export default function App() {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(restoredSelection.edgeId);
   const [inputDirtySinceGeneration, setInputDirtySinceGeneration] = useState(false);
   const [showRegenerationConfirm, setShowRegenerationConfirm] = useState(false);
-  const [autosaveStatus, setAutosaveStatus] = useState(() => {
-    if (!isWorkspaceLocalStorageAvailable()) return "Autosave unavailable";
-    if (restoredWorkspace) return `Restored local workspace ${formatTime(restoredWorkspace.savedAt)}`;
-    return "Autosave ready";
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>(() => {
+    if (!isWorkspaceLocalStorageAvailable()) return { key: "app.autosave.unavailable" };
+    if (restoredWorkspace) {
+      return {
+        key: "app.autosave.restored",
+        time: formatTime(restoredWorkspace.savedAt),
+      };
+    }
+    return { key: "app.autosave.ready" };
   });
+  const autosaveStatusText = formatAutosaveStatus(autosaveStatus, t);
 
   useEffect(() => {
     if (!isWorkspaceLocalStorageAvailable()) {
-      setAutosaveStatus("Autosave unavailable");
+      setAutosaveStatus({ key: "app.autosave.unavailable" });
       return;
     }
 
@@ -75,7 +118,10 @@ export default function App() {
         auditLog,
       });
       saveWorkspaceToLocalStorage(workspace);
-      setAutosaveStatus(`Local workspace saved ${formatTime(workspace.savedAt)}`);
+      setAutosaveStatus({
+        key: "app.autosave.saved",
+        time: formatTime(workspace.savedAt),
+      });
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
@@ -115,7 +161,7 @@ export default function App() {
     setSelectedEdgeId(null);
     setInputDirtySinceGeneration(false);
     setShowRegenerationConfirm(false);
-    setAutosaveStatus("Input imported. Graph not generated yet.");
+    setAutosaveStatus({ key: "app.autosave.inputImported" });
   }
 
   function importWorkspaceDocument(
@@ -148,7 +194,10 @@ export default function App() {
     setInputDirtySinceGeneration(false);
     setShowRegenerationConfirm(false);
     saveWorkspaceToLocalStorage(normalizedWorkspace);
-    setAutosaveStatus(`Imported workspace ${formatTime(normalizedWorkspace.savedAt)}`);
+    setAutosaveStatus({
+      key: "app.autosave.workspaceImported",
+      time: formatTime(normalizedWorkspace.savedAt),
+    });
   }
 
   function importFullAIContext(context: FullAIContext) {
@@ -159,17 +208,15 @@ export default function App() {
       selectedEdgeId: null,
     });
     importWorkspaceDocument(workspace, "full_ai_context_imported");
-    setAutosaveStatus("Full AI Context imported as workspace");
+    setAutosaveStatus({ key: "app.autosave.fullContextImported" });
   }
 
   function clearLocalWorkspace() {
-    const confirmed = window.confirm(
-      "Clear the locally saved EFlow workspace? Current open workspace will stay unchanged.",
-    );
+    const confirmed = window.confirm(t("app.autosave.clearConfirm"));
     if (!confirmed) return;
 
     clearWorkspaceFromLocalStorage();
-    setAutosaveStatus("Local saved workspace cleared. Current open workspace is unchanged.");
+    setAutosaveStatus({ key: "app.autosave.cleared" });
   }
 
   function replaceGraph() {
@@ -269,13 +316,14 @@ export default function App() {
 
   return (
     <AppShell
+      tutorialMode={tutorialMode}
       topBar={
         <TopBar
           input={engineeringFlowInput}
           graph={engineeringFlowGraph}
           inputDirtySinceGeneration={inputDirtySinceGeneration}
           showRegenerationConfirm={showRegenerationConfirm}
-          autosaveStatus={autosaveStatus}
+          autosaveStatus={autosaveStatusText}
           onLoadExample={loadTodoThoughtUniverseExample}
           onGenerateGraph={generateGraph}
           onReplaceGraph={replaceGraph}
@@ -311,7 +359,7 @@ export default function App() {
             selectedNodeId={selectedNodeId}
             selectedEdgeId={selectedEdgeId}
             auditLog={auditLog}
-            autosaveStatus={autosaveStatus}
+            autosaveStatus={autosaveStatusText}
             onSelectNode={selectNode}
             onSelectEdge={selectEdge}
             onUpdateNode={updateNode}
@@ -347,6 +395,13 @@ function getValidWorkspaceSelection(workspace: EFlowWorkspaceDocument | null): {
   }
 
   return { nodeId: null, edgeId: null };
+}
+
+function readAppRoute(): { pathname: string; tutorialMode: boolean } {
+  return {
+    pathname: window.location.pathname,
+    tutorialMode: new URLSearchParams(window.location.search).get("tour") === "1",
+  };
 }
 
 function buildGraphGeneratedAuditEvent(
@@ -621,4 +676,15 @@ function formatTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatAutosaveStatus(status: AutosaveStatus, t: Translate): string {
+  switch (status.key) {
+    case "app.autosave.restored":
+    case "app.autosave.saved":
+    case "app.autosave.workspaceImported":
+      return t(status.key, { time: status.time });
+    default:
+      return t(status.key);
+  }
 }

@@ -7,6 +7,7 @@ import type {
 import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import { buildFullAIContext } from "../../lib/exportContext";
 import { buildWorkspaceDocument } from "../../lib/workspacePersistence";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { CopyJsonButton } from "./CopyJsonButton";
 import { EFlowContextExportPanel } from "./EFlowContextExportPanel";
 import { WorkspacePersistencePanel } from "./WorkspacePersistencePanel";
@@ -33,7 +34,7 @@ export function JsonExportPanel({
   selectedNodeId = null,
   selectedEdgeId = null,
   auditLog = [],
-  autosaveStatus = "Autosave ready",
+  autosaveStatus,
   showJsonExports = true,
   showEFlowContextExport = true,
   showWorkspacePersistence = true,
@@ -42,7 +43,9 @@ export function JsonExportPanel({
   onImportInput,
   onClearLocalWorkspace,
 }: JsonExportPanelProps) {
+  const { t } = useLanguage();
   const fullContext = buildFullAIContext(input, graph);
+  const displayedAutosaveStatus = autosaveStatus ?? t("app.autosave.ready");
   const workspace = buildWorkspaceDocument({
     input,
     graph,
@@ -90,7 +93,7 @@ export function JsonExportPanel({
       {shouldShowWorkspacePersistence && workspaceHandlers ? (
         <WorkspacePersistencePanel
           workspace={workspace}
-          autosaveStatus={autosaveStatus}
+          autosaveStatus={displayedAutosaveStatus}
           onImportWorkspace={workspaceHandlers.onImportWorkspace}
           onImportFullContext={workspaceHandlers.onImportFullContext}
           onImportInput={workspaceHandlers.onImportInput}

@@ -88,6 +88,21 @@ The left panel edits structured project input. The center canvas renders the cur
 
 Section open/closed state is local UI state only and is not persisted to workspace JSON.
 
+## Tutorial And Language UI
+
+EFlow includes a lightweight CSS-only tutorial layer:
+
+- `/` runs the normal app.
+- `/?tour=1` runs the normal app with tutorial annotations enabled.
+- `/tutorial` opens a standalone tutorial page inside the Vite SPA.
+
+Tutorial markers are rendered from `data-tour`, `data-tour-step`, `data-tour-title`, and
+`data-tour-body` attributes. They are visual annotations only and do not change graph data,
+workspace JSON, audit history, commands, or AI context exports.
+
+The UI language foundation supports `zh-TW` and `en`. The default locale is `zh-TW`, and the
+preference is stored only in browser `localStorage` under `eflow.ui.locale`.
+
 ## AI-Readable Context Export
 
 The preferred AI-readable export is `eflow-context/v0.1`.

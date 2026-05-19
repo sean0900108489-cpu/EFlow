@@ -40,6 +40,13 @@ import {
   validateEFlowWorkspaceDocument,
   validateEngineeringFlowGraph,
 } from "../src/lib/workspaceValidation";
+import { translations } from "../src/lib/i18n/translations";
+import {
+  DEFAULT_LOCALE,
+  LOCALE_STORAGE_KEY,
+  LOCALES,
+  type TranslationKey,
+} from "../src/lib/i18n/types";
 import {
   EFLOW_COMMAND_SCHEMA_VERSION,
   LIFECYCLE_STATUSES,
@@ -441,7 +448,19 @@ assert.ok(
 );
 
 assert.deepEqual(
-  AI_CHAT_PROMPT_MODES.map((mode) => mode.label),
+  AI_CHAT_PROMPT_MODES.map((mode) => mode.id),
+  [
+    "free_chat",
+    "codex_milestone_prompt",
+    "codex_report_to_command",
+    "raw_idea_to_input",
+    "progress_handoff_summary",
+    "strategic_architecture_consultation",
+  ],
+  "AI chat prompt modes should include the required collaboration mode ids",
+);
+assert.deepEqual(
+  AI_CHAT_PROMPT_MODES.map((mode) => translations.en[mode.labelKey]),
   [
     "Free chat",
     "Generate Codex milestone prompt",
@@ -453,10 +472,26 @@ assert.deepEqual(
   "AI chat prompt modes should include the required collaboration modes",
 );
 assert.deepEqual(
-  AI_CHAT_CONTEXT_ATTACHMENT_MODES.map((mode) => mode.label),
+  AI_CHAT_CONTEXT_ATTACHMENT_MODES.map((mode) => mode.id),
+  ["none", "summary", "full"],
+  "AI chat context attachment modes should keep stable ids",
+);
+assert.deepEqual(
+  AI_CHAT_CONTEXT_ATTACHMENT_MODES.map((mode) => translations.en[mode.labelKey]),
   ["No context", "Summary context", "Full EFlow Context"],
   "AI chat context attachment modes should be explicit and default to No context in the UI",
 );
+assert.equal(DEFAULT_LOCALE, "zh-TW", "Default UI locale should be zh-TW");
+assert.equal(LOCALE_STORAGE_KEY, "eflow.ui.locale", "Locale storage key should stay UI-only");
+assert.deepEqual([...LOCALES], ["zh-TW", "en"], "Supported UI locales should be bilingual");
+const defaultTranslationKeys = Object.keys(translations[DEFAULT_LOCALE]).sort() as TranslationKey[];
+for (const locale of LOCALES) {
+  assert.deepEqual(
+    Object.keys(translations[locale]).sort(),
+    defaultTranslationKeys,
+    `Locale ${locale} should cover the same translation keys as the default locale`,
+  );
+}
 const commandConversionPrompt = buildAIChatPrompt({
   mode: "codex_report_to_command",
   userMessage: "Codex completed implementation.",

@@ -8,6 +8,8 @@ import {
   type AIChatPromptMode,
   type BuiltAIChatPrompt,
 } from "../../lib/buildAIChatPrompt";
+import { useLanguage } from "../../lib/i18n/language-context";
+import type { TranslationKey, TranslationValues } from "../../lib/i18n/types";
 import { buildEFlowContextExport } from "../../lib/buildEflowContextExport";
 import type { EngineeringFlowGraph, EngineeringFlowInput } from "../../types/engineeringFlow";
 
@@ -35,7 +37,10 @@ type ProviderInputMessage = {
   content: string;
 };
 
+type Translate = (key: TranslationKey, values?: TranslationValues) => string;
+
 export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
+  const { t } = useLanguage();
   const storedApiKey = useMemo(() => readStoredApiKey(), []);
   const [apiKey, setApiKey] = useState(storedApiKey);
   const [rememberKey, setRememberKey] = useState(storedApiKey.length > 0);
@@ -79,7 +84,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const contextTokenEstimate = estimateTokenCount(contextCharCount);
   const latestAssistantMessage = getLatestAssistantMessage(chatMessages);
   const canSend = draftMessage.trim().length > 0 && !isSending;
-  const promptModeNote = getPromptModeNote(promptMode);
+  const promptModeNote = getPromptModeNote(promptMode, t);
   const composedPromptPreview = useMemo(() => {
     const prompt = buildAIChatPrompt({
       mode: promptMode,
@@ -91,8 +96,8 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
       }),
     });
 
-    return formatComposedPromptPreview(prompt);
-  }, [contextAttachmentMode, draftMessage, eflowContextJson, eflowContextSummary, promptMode]);
+    return formatComposedPromptPreview(prompt, t);
+  }, [contextAttachmentMode, draftMessage, eflowContextJson, eflowContextSummary, promptMode, t]);
 
   useEffect(() => {
     writeStoredApiKey(rememberKey ? apiKey : "");
@@ -115,22 +120,22 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     const trimmedBaseUrl = baseUrl.trim();
 
     if (!userContent) {
-      setStatusMessage({ type: "error", text: "Write a message before sending." });
+      setStatusMessage({ type: "error", text: t("aiChat.error.emptyMessage") });
       return;
     }
 
     if (!trimmedApiKey) {
-      setStatusMessage({ type: "error", text: "Add an API key before sending." });
+      setStatusMessage({ type: "error", text: t("aiChat.error.missingApiKey") });
       return;
     }
 
     if (!trimmedModel) {
-      setStatusMessage({ type: "error", text: "Add a model name before sending." });
+      setStatusMessage({ type: "error", text: t("aiChat.error.missingModel") });
       return;
     }
 
     if (!isValidUrl(trimmedBaseUrl)) {
-      setStatusMessage({ type: "error", text: "Add a valid provider base URL before sending." });
+      setStatusMessage({ type: "error", text: t("aiChat.error.invalidBaseUrl") });
       return;
     }
 
@@ -178,8 +183,9 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
         baseUrl: trimmedBaseUrl,
         model: trimmedModel,
         input: requestInput,
+        t,
       });
-      const assistantText = extractAssistantText(responsePayload);
+      const assistantText = extractAssistantText(responsePayload, t);
       setChatMessages((currentMessages) => [
         ...currentMessages,
         {
@@ -193,11 +199,13 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
         type: "info",
         text:
           prompt.attachedContextSize > 0
-            ? `Response received with ${prompt.attachedContextSize.toLocaleString()} context characters attached.`
-            : "Response received.",
+            ? t("aiChat.status.responseReceivedWithContext", {
+                count: prompt.attachedContextSize.toLocaleString(),
+              })
+            : t("aiChat.status.responseReceived"),
       });
     } catch (error) {
-      const errorText = formatProviderError(error);
+      const errorText = formatProviderError(error, t);
       setStatusMessage({ type: "error", text: errorText });
       setChatMessages((currentMessages) => [
         ...currentMessages,
@@ -219,15 +227,15 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
 
     try {
       if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard API is unavailable.");
+        throw new Error(t("aiChat.error.clipboardUnavailable"));
       }
 
       await navigator.clipboard.writeText(latestAssistantMessage.content);
-      setStatusMessage({ type: "info", text: "Latest assistant response copied." });
+      setStatusMessage({ type: "info", text: t("aiChat.status.latestResponseCopied") });
     } catch (error) {
       setStatusMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Could not copy the latest response.",
+        text: error instanceof Error ? error.message : t("aiChat.error.copyLatestResponseFailed"),
       });
     }
   }
@@ -235,44 +243,51 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   async function copyComposedPromptPreview() {
     try {
       if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard API is unavailable.");
+        throw new Error(t("aiChat.error.clipboardUnavailable"));
       }
 
       await navigator.clipboard.writeText(composedPromptPreview);
-      setStatusMessage({ type: "info", text: "Composed prompt preview copied." });
+      setStatusMessage({ type: "info", text: t("aiChat.status.promptPreviewCopied") });
     } catch (error) {
       setStatusMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Could not copy the composed prompt preview.",
+        text: error instanceof Error ? error.message : t("aiChat.error.copyPromptPreviewFailed"),
       });
     }
   }
 
   function clearChat() {
     setChatMessages([]);
-    setStatusMessage({ type: "info", text: "Chat cleared. No graph state changed." });
+    setStatusMessage({ type: "info", text: t("aiChat.status.chatCleared") });
   }
 
   function clearApiKey() {
     setApiKey("");
     setRememberKey(false);
     writeStoredApiKey("");
-    setStatusMessage({ type: "info", text: "API key cleared from this session and localStorage." });
+    setStatusMessage({ type: "info", text: t("aiChat.status.apiKeyCleared") });
   }
 
   return (
-    <section className={`ai-chat-console ${isCollapsed ? "is-collapsed" : ""}`}>
+    <section
+      className={`ai-chat-console ${isCollapsed ? "is-collapsed" : ""}`}
+      data-tour="ai-console"
+      data-tour-step="2"
+      data-tour-title={t("tour.aiConsole.title")}
+      data-tour-body={t("tour.aiConsole.body")}
+      data-tour-position="bottom"
+    >
       <div className="ai-chat-console-header">
         <div className="ai-chat-title-block">
-          <p className="eyebrow">AI collaboration</p>
-          <h2>AI Collaboration Console</h2>
-          <p>Chat with your model using optional current EFlow Context.</p>
+          <p className="eyebrow">{t("aiChat.header.eyebrow")}</p>
+          <h2>{t("aiChat.header.title")}</h2>
+          <p>{t("aiChat.header.description")}</p>
         </div>
         <div className="ai-chat-header-actions">
-          <div className="ai-chat-badge-row" aria-label="AI collaboration boundaries">
-            <span className="status-indicator">Personal BYOK</span>
-            <span className="status-indicator status-warn">Draft only</span>
-            <span className="status-indicator status-ok">No graph mutation</span>
+          <div className="ai-chat-badge-row" aria-label={t("aiChat.boundaries.label")}>
+            <span className="status-indicator">{t("aiChat.boundaries.personalByok")}</span>
+            <span className="status-indicator status-warn">{t("aiChat.boundaries.draftOnly")}</span>
+            <span className="status-indicator status-ok">{t("aiChat.boundaries.noGraphMutation")}</span>
           </div>
           <button
             className="mini-button"
@@ -280,7 +295,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
             aria-expanded={!isCollapsed}
             onClick={() => setIsCollapsed((currentIsCollapsed) => !currentIsCollapsed)}
           >
-            {isCollapsed ? "Expand" : "Collapse"}
+            {isCollapsed ? t("common.disclosure.expand") : t("common.disclosure.collapse")}
           </button>
         </div>
       </div>
@@ -289,7 +304,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
         <div className="ai-chat-console-body">
           <div className="ai-chat-config-grid">
             <label className="field">
-              <span>Base URL</span>
+              <span>{t("aiChat.settings.baseUrl")}</span>
               <input
                 type="url"
                 value={baseUrl}
@@ -298,7 +313,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
               />
             </label>
             <label className="field">
-              <span>Model</span>
+              <span>{t("aiChat.settings.model")}</span>
               <input
                 type="text"
                 value={model}
@@ -307,12 +322,12 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
               />
             </label>
             <label className="field">
-              <span>API key</span>
+              <span>{t("aiChat.settings.apiKey")}</span>
               <input
                 type="password"
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
-                placeholder="sk-..."
+                placeholder={t("aiChat.settings.apiKeyPlaceholder")}
                 autoComplete="off"
               />
             </label>
@@ -322,37 +337,33 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                 checked={rememberKey}
                 onChange={(event) => setRememberKey(event.target.checked)}
               />
-              <span>Remember key in this browser</span>
+              <span>{t("aiChat.settings.rememberKey")}</span>
             </label>
           </div>
 
           <div className="ai-chat-safety-copy">
             <p>
-              API key is used only in this browser session unless remembered. Remembered keys are
-              stored in localStorage as <code>{API_KEY_STORAGE_KEY}</code>.
+              {t("aiChat.settings.helper.apiKey", { storageKey: API_KEY_STORAGE_KEY })}
             </p>
-            <p>
-              Model responses are drafts and cannot modify EFlow. Use Local Command Import to
-              validate, dry-run, and apply any generated command.
-            </p>
+            <p>{t("aiChat.settings.helper.modelDraft")}</p>
           </div>
 
           <div className="ai-chat-prompt-grid">
             <label className="field">
-              <span>Prompt mode</span>
+              <span>{t("aiChat.prompt.modeLabel")}</span>
               <select
                 value={promptMode}
                 onChange={(event) => setPromptMode(event.target.value as AIChatPromptMode)}
               >
                 {AI_CHAT_PROMPT_MODES.map((mode) => (
                   <option key={mode.id} value={mode.id}>
-                    {mode.label}
+                    {t(mode.labelKey)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="field">
-              <span>Context mode</span>
+              <span>{t("aiChat.context.modeLabel")}</span>
               <select
                 value={contextAttachmentMode}
                 onChange={(event) =>
@@ -361,61 +372,50 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
               >
                 {AI_CHAT_CONTEXT_ATTACHMENT_MODES.map((mode) => (
                   <option key={mode.id} value={mode.id}>
-                    {mode.label}
+                    {t(mode.labelKey)}
                   </option>
                 ))}
               </select>
             </label>
             <div className="ai-chat-context-meter" aria-live="polite">
               {contextAttachmentMode === "none" ? (
-                <span>No context selected. Only your message and prompt-mode instructions will be sent.</span>
+                <span>{t("aiChat.context.noContextSelected")}</span>
               ) : selectedContextText ? (
                 <>
                   <strong>{contextCharCount.toLocaleString()}</strong>
-                  <span>chars</span>
+                  <span>{t("aiChat.context.chars")}</span>
                   <strong>{contextTokenEstimate.toLocaleString()}</strong>
-                  <span>rough tokens</span>
+                  <span>{t("aiChat.context.roughTokens")}</span>
                 </>
               ) : (
-                <span>No Full EFlow Context available yet. Generate or import a graph first.</span>
+                <span>{t("aiChat.context.unavailable")}</span>
               )}
             </div>
           </div>
           <div className="ai-chat-context-helper">
-            <p>No context: sends only your message and prompt-mode instructions.</p>
-            <p>Summary: sends compact project state.</p>
-            <p>Full: sends the complete eflow-context/v0.1 JSON on every message while selected.</p>
-            <p>Full context may use significantly more tokens.</p>
+            <p>{t("aiChat.context.helper.noContext")}</p>
+            <p>{t("aiChat.context.helper.summary")}</p>
+            <p>{t("aiChat.context.helper.full")}</p>
+            <p>{t("aiChat.context.warning.fullCost")}</p>
           </div>
           <p className="ai-chat-mode-note">{promptModeNote}</p>
 
           {contextAttachmentMode === "summary" ? (
-            <p className="ai-chat-warning">
-              Summary context sends compact project state, not the full context JSON.
-            </p>
+            <p className="ai-chat-warning">{t("aiChat.context.warning.summary")}</p>
           ) : null}
           {contextAttachmentMode === "full" && eflowContextJson ? (
-            <p className="ai-chat-warning">
-              Full context may use significantly more tokens. The complete eflow-context/v0.1 JSON is
-              sent on every message while Full EFlow Context is selected.
-            </p>
+            <p className="ai-chat-warning">{t("aiChat.context.warning.full")}</p>
           ) : null}
           {contextAttachmentMode === "full" && !eflowContextJson ? (
-            <p className="ai-chat-warning">
-              Full EFlow Context is selected, but no graph context is available yet. This message will
-              send without EFlow Context JSON.
-            </p>
+            <p className="ai-chat-warning">{t("aiChat.context.warning.fullUnavailable")}</p>
           ) : null}
 
           <div className="ai-chat-main">
             <div className="ai-chat-message-list" ref={messageListRef} role="log" aria-live="polite">
               {chatMessages.length === 0 ? (
                 <div className="ai-chat-empty-state">
-                  <h3>Draft with an external model while EFlow stays local-first.</h3>
-                  <p>
-                    Attach context only when you want the current graph snapshot sent to the
-                    configured provider.
-                  </p>
+                  <h3>{t("aiChat.state.emptyTitle")}</h3>
+                  <p>{t("aiChat.state.emptyBody")}</p>
                 </div>
               ) : (
                 chatMessages.map((message) => (
@@ -426,7 +426,13 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                     key={message.id}
                   >
                     <div className="ai-chat-message-meta">
-                      <span>{message.role === "user" ? "You" : message.error ? "Error" : "Assistant"}</span>
+                      <span>
+                        {message.role === "user"
+                          ? t("aiChat.message.you")
+                          : message.error
+                            ? t("aiChat.message.error")
+                            : t("aiChat.message.assistant")}
+                      </span>
                       <time dateTime={message.createdAt}>{formatMessageTime(message.createdAt)}</time>
                     </div>
                     <p>{message.content}</p>
@@ -436,10 +442,10 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
               {isSending ? (
                 <article className="ai-chat-message ai-chat-message-assistant ai-chat-message-pending">
                   <div className="ai-chat-message-meta">
-                    <span>Assistant</span>
-                    <span>Thinking</span>
+                    <span>{t("aiChat.message.assistant")}</span>
+                    <span>{t("aiChat.message.thinking")}</span>
                   </div>
-                  <p>Waiting for provider response...</p>
+                  <p>{t("aiChat.state.pending")}</p>
                 </article>
               ) : null}
             </div>
@@ -455,8 +461,8 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                     void sendMessage();
                   }
                 }}
-                placeholder="Ask for a Codex prompt, paste a report, or explore an architecture decision."
-                aria-label="AI collaboration message"
+                placeholder={t("aiChat.composer.placeholder")}
+                aria-label={t("aiChat.composer.ariaLabel")}
               />
               <div className="ai-chat-actions">
                 <button
@@ -465,14 +471,14 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                   onClick={() => void sendMessage()}
                   disabled={!canSend}
                 >
-                  {isSending ? "Sending" : "Send"}
+                  {isSending ? t("aiChat.actions.sending") : t("aiChat.actions.send")}
                 </button>
                 <button
                   className="button button-secondary"
                   type="button"
                   onClick={() => void copyComposedPromptPreview()}
                 >
-                  Copy composed prompt preview
+                  {t("aiChat.actions.copyComposedPromptPreview")}
                 </button>
                 <button
                   className="button button-secondary"
@@ -480,7 +486,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                   onClick={() => void copyLatestResponse()}
                   disabled={!latestAssistantMessage}
                 >
-                  Copy latest response
+                  {t("aiChat.actions.copyLatestResponse")}
                 </button>
                 <button
                   className="button button-secondary"
@@ -488,7 +494,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                   onClick={clearChat}
                   disabled={chatMessages.length === 0 || isSending}
                 >
-                  Clear chat
+                  {t("aiChat.actions.clearChat")}
                 </button>
                 <button
                   className="danger-button"
@@ -496,7 +502,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                   onClick={clearApiKey}
                   disabled={!apiKey && !rememberKey}
                 >
-                  Clear API key
+                  {t("aiChat.actions.clearApiKey")}
                 </button>
               </div>
             </div>
@@ -518,11 +524,13 @@ async function postDirectProviderRequest({
   baseUrl,
   model,
   input,
+  t,
 }: {
   apiKey: string;
   baseUrl: string;
   model: string;
   input: ProviderInputMessage[];
+  t: Translate;
 }): Promise<unknown> {
   let response: Response;
 
@@ -540,9 +548,7 @@ async function postDirectProviderRequest({
     });
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(
-        "Network or CORS error while contacting the provider. Some providers block direct browser API calls.",
-      );
+      throw new Error(t("aiChat.error.networkOrCors"));
     }
 
     throw error;
@@ -552,15 +558,15 @@ async function postDirectProviderRequest({
   const responsePayload = parseProviderPayload(responseText);
 
   if (!response.ok) {
-    throw new Error(buildHttpErrorMessage(response, responsePayload));
+    throw new Error(buildHttpErrorMessage(response, responsePayload, t));
   }
 
   return responsePayload;
 }
 
-function extractAssistantText(payload: unknown): string {
+function extractAssistantText(payload: unknown, t: Translate): string {
   if (typeof payload === "string") {
-    return payload || "Provider returned an empty response.";
+    return payload || t("aiChat.error.providerEmptyResponse");
   }
 
   if (isRecord(payload)) {
@@ -578,7 +584,7 @@ function extractAssistantText(payload: unknown): string {
     if (contentText) return contentText;
   }
 
-  return `Provider response did not include output_text or a recognized content shape.\n\n${safeStringify(payload)}`;
+  return `${t("aiChat.error.providerMissingOutput")}\n\n${safeStringify(payload)}`;
 }
 
 function extractContentText(value: unknown): string[] {
@@ -609,9 +615,12 @@ function extractContentText(value: unknown): string[] {
   return textParts;
 }
 
-function buildHttpErrorMessage(response: Response, payload: unknown): string {
+function buildHttpErrorMessage(response: Response, payload: unknown, t: Translate): string {
   const providerMessage = extractProviderErrorMessage(payload);
-  const prefix = `Provider returned HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}.`;
+  const prefix = t("aiChat.error.providerHttp", {
+    status: response.status,
+    statusText: response.statusText ? ` ${response.statusText}` : "",
+  });
   return providerMessage ? `${prefix} ${providerMessage}` : prefix;
 }
 
@@ -638,9 +647,9 @@ function parseProviderPayload(responseText: string): unknown {
   }
 }
 
-function formatProviderError(error: unknown): string {
+function formatProviderError(error: unknown, t: Translate): string {
   if (error instanceof Error) return error.message;
-  return "Unexpected provider error.";
+  return t("aiChat.error.unexpectedProvider");
 }
 
 function getLatestAssistantMessage(messages: ChatMessage[]): ChatMessage | null {
@@ -704,24 +713,29 @@ function getSelectedContextText({
   return "";
 }
 
-function formatComposedPromptPreview(prompt: BuiltAIChatPrompt): string {
-  return ["SYSTEM PROMPT", prompt.systemPrompt, "USER PROMPT", prompt.userPrompt].join("\n\n");
+function formatComposedPromptPreview(prompt: BuiltAIChatPrompt, t: Translate): string {
+  return [
+    t("aiChat.preview.systemPrompt"),
+    prompt.systemPrompt,
+    t("aiChat.preview.userPrompt"),
+    prompt.userPrompt,
+  ].join("\n\n");
 }
 
-function getPromptModeNote(mode: AIChatPromptMode): string {
+function getPromptModeNote(mode: AIChatPromptMode, t: Translate): string {
   switch (mode) {
     case "free_chat":
-      return "Free chat is draft-only. Attach context only when the current graph snapshot should leave the browser.";
+      return t("aiChat.prompt.note.freeChat");
     case "codex_milestone_prompt":
-      return "Codex prompts should keep scope small, inspect the repo first, run validation/build checks, and never commit or push.";
+      return t("aiChat.prompt.note.codexMilestonePrompt");
     case "codex_report_to_command":
-      return "Generated eflow-command JSON is never applied by chat. Paste it into Local Command Import for Validate -> Dry Run -> Apply.";
+      return t("aiChat.prompt.note.codexReportToCommand");
     case "raw_idea_to_input":
-      return "Raw idea mode should produce EngineeringFlowInput JSON only and preserve unknowns instead of inventing architecture.";
+      return t("aiChat.prompt.note.rawIdeaToInput");
     case "progress_handoff_summary":
-      return "Handoff summaries are continuation drafts and should keep do-not-do boundaries visible.";
+      return t("aiChat.prompt.note.progressHandoffSummary");
     case "strategic_architecture_consultation":
-      return "Architecture consultation should reason about options and boundaries without writing implementation code.";
+      return t("aiChat.prompt.note.strategicArchitectureConsultation");
     default: {
       const exhaustiveCheck: never = mode;
       return exhaustiveCheck;

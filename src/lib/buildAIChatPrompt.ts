@@ -1,51 +1,52 @@
 import { EFLOW_COMMAND_SCHEMA_VERSION } from "../types/eflowCommand";
 import { EFLOW_CONTEXT_SCHEMA_VERSION } from "../types/eflowContext";
 import type { EngineeringFlowGraph, EngineeringFlowInput } from "../types/engineeringFlow";
+import type { TranslationKey } from "./i18n/types";
 import { buildGraphTrustSummary, isBlockingQuestionNode } from "./trustSummary";
 
 export const AI_CHAT_PROMPT_MODES = [
   {
     id: "free_chat",
-    label: "Free chat",
+    labelKey: "aiChat.promptMode.freeChat",
   },
   {
     id: "codex_milestone_prompt",
-    label: "Generate Codex milestone prompt",
+    labelKey: "aiChat.promptMode.codexMilestonePrompt",
   },
   {
     id: "codex_report_to_command",
-    label: "Convert Codex report to eflow-command",
+    labelKey: "aiChat.promptMode.codexReportToCommand",
   },
   {
     id: "raw_idea_to_input",
-    label: "Raw idea to EngineeringFlowInput JSON",
+    labelKey: "aiChat.promptMode.rawIdeaToInput",
   },
   {
     id: "progress_handoff_summary",
-    label: "Progress / handoff summary",
+    labelKey: "aiChat.promptMode.progressHandoffSummary",
   },
   {
     id: "strategic_architecture_consultation",
-    label: "Strategic architecture consultation",
+    labelKey: "aiChat.promptMode.strategicArchitectureConsultation",
   },
-] as const;
+] as const satisfies readonly { id: string; labelKey: TranslationKey }[];
 
 export type AIChatPromptMode = (typeof AI_CHAT_PROMPT_MODES)[number]["id"];
 
 export const AI_CHAT_CONTEXT_ATTACHMENT_MODES = [
   {
     id: "none",
-    label: "No context",
+    labelKey: "aiChat.contextMode.none",
   },
   {
     id: "summary",
-    label: "Summary context",
+    labelKey: "aiChat.contextMode.summary",
   },
   {
     id: "full",
-    label: "Full EFlow Context",
+    labelKey: "aiChat.contextMode.full",
   },
-] as const;
+] as const satisfies readonly { id: string; labelKey: TranslationKey }[];
 
 export type AIChatContextAttachmentMode = (typeof AI_CHAT_CONTEXT_ATTACHMENT_MODES)[number]["id"];
 
