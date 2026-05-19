@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AI_CHAT_CONTEXT_ATTACHMENT_MODES,
   AI_CHAT_PROMPT_MODES,
+  buildAIChatContextSummary,
   buildAIChatPrompt,
+  type AIChatContextAttachmentMode,
   type AIChatPromptMode,
+  type BuiltAIChatPrompt,
 } from "../../lib/buildAIChatPrompt";
 import { buildEFlowContextExport } from "../../lib/buildEflowContextExport";
 import type { EngineeringFlowGraph, EngineeringFlowInput } from "../../types/engineeringFlow";
@@ -38,7 +42,8 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
   const [promptMode, setPromptMode] = useState<AIChatPromptMode>("free_chat");
-  const [attachContext, setAttachContext] = useState(false);
+  const [contextAttachmentMode, setContextAttachmentMode] =
+    useState<AIChatContextAttachmentMode>("none");
   const [draftMessage, setDraftMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -61,11 +66,33 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     );
   }, [graph, input]);
 
-  const contextCharCount = eflowContextJson.length;
+  const eflowContextSummary = useMemo(
+    () => buildAIChatContextSummary({ input, graph }),
+    [graph, input],
+  );
+  const selectedContextText = getSelectedContextText({
+    mode: contextAttachmentMode,
+    eflowContextSummary,
+    eflowContextJson,
+  });
+  const contextCharCount = selectedContextText.length;
   const contextTokenEstimate = estimateTokenCount(contextCharCount);
   const latestAssistantMessage = getLatestAssistantMessage(chatMessages);
   const canSend = draftMessage.trim().length > 0 && !isSending;
   const promptModeNote = getPromptModeNote(promptMode);
+  const composedPromptPreview = useMemo(() => {
+    const prompt = buildAIChatPrompt({
+      mode: promptMode,
+      userMessage: draftMessage,
+      ...getContextAttachmentArgs({
+        mode: contextAttachmentMode,
+        eflowContextSummary,
+        eflowContextJson,
+      }),
+    });
+
+    return formatComposedPromptPreview(prompt);
+  }, [contextAttachmentMode, draftMessage, eflowContextJson, eflowContextSummary, promptMode]);
 
   useEffect(() => {
     writeStoredApiKey(rememberKey ? apiKey : "");
@@ -107,11 +134,14 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
       return;
     }
 
-    const attachedContextJson = attachContext && eflowContextJson ? eflowContextJson : undefined;
     const prompt = buildAIChatPrompt({
       mode: promptMode,
       userMessage: userContent,
-      eflowContextJson: attachedContextJson,
+      ...getContextAttachmentArgs({
+        mode: contextAttachmentMode,
+        eflowContextSummary,
+        eflowContextJson,
+      }),
     });
     const historyForRequest = chatMessages
       .filter((message) => !message.error)
@@ -198,6 +228,22 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
       setStatusMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Could not copy the latest response.",
+      });
+    }
+  }
+
+  async function copyComposedPromptPreview() {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API is unavailable.");
+      }
+
+      await navigator.clipboard.writeText(composedPromptPreview);
+      setStatusMessage({ type: "info", text: "Composed prompt preview copied." });
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Could not copy the composed prompt preview.",
       });
     }
   }
@@ -305,16 +351,25 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                 ))}
               </select>
             </label>
-            <label className="check-field ai-chat-check-field">
-              <input
-                type="checkbox"
-                checked={attachContext}
-                onChange={(event) => setAttachContext(event.target.checked)}
-              />
-              <span>Attach current EFlow Context</span>
+            <label className="field">
+              <span>Context mode</span>
+              <select
+                value={contextAttachmentMode}
+                onChange={(event) =>
+                  setContextAttachmentMode(event.target.value as AIChatContextAttachmentMode)
+                }
+              >
+                {AI_CHAT_CONTEXT_ATTACHMENT_MODES.map((mode) => (
+                  <option key={mode.id} value={mode.id}>
+                    {mode.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="ai-chat-context-meter" aria-live="polite">
-              {eflowContextJson ? (
+              {contextAttachmentMode === "none" ? (
+                <span>No context selected. Only your message and prompt-mode instructions will be sent.</span>
+              ) : selectedContextText ? (
                 <>
                   <strong>{contextCharCount.toLocaleString()}</strong>
                   <span>chars</span>
@@ -322,20 +377,33 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                   <span>rough tokens</span>
                 </>
               ) : (
-                <span>No EFlow Context available yet. Generate or import a graph first.</span>
+                <span>No Full EFlow Context available yet. Generate or import a graph first.</span>
               )}
             </div>
           </div>
+          <div className="ai-chat-context-helper">
+            <p>No context: sends only your message and prompt-mode instructions.</p>
+            <p>Summary: sends compact project state.</p>
+            <p>Full: sends the complete eflow-context/v0.1 JSON on every message while selected.</p>
+            <p>Full context may use significantly more tokens.</p>
+          </div>
           <p className="ai-chat-mode-note">{promptModeNote}</p>
 
-          {attachContext && eflowContextJson ? (
+          {contextAttachmentMode === "summary" ? (
             <p className="ai-chat-warning">
-              Attached EFlow Context will be sent to the selected external model provider.
+              Summary context sends compact project state, not the full context JSON.
             </p>
           ) : null}
-          {attachContext && !eflowContextJson ? (
+          {contextAttachmentMode === "full" && eflowContextJson ? (
             <p className="ai-chat-warning">
-              No EFlow Context available yet. This message will send without graph context.
+              Full context may use significantly more tokens. The complete eflow-context/v0.1 JSON is
+              sent on every message while Full EFlow Context is selected.
+            </p>
+          ) : null}
+          {contextAttachmentMode === "full" && !eflowContextJson ? (
+            <p className="ai-chat-warning">
+              Full EFlow Context is selected, but no graph context is available yet. This message will
+              send without EFlow Context JSON.
             </p>
           ) : null}
 
@@ -398,6 +466,13 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                   disabled={!canSend}
                 >
                   {isSending ? "Sending" : "Send"}
+                </button>
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={() => void copyComposedPromptPreview()}
+                >
+                  Copy composed prompt preview
                 </button>
                 <button
                   className="button button-secondary"
@@ -593,6 +668,44 @@ function formatMessageTime(value: string): string {
 
 function estimateTokenCount(characterCount: number): number {
   return Math.ceil(characterCount / 4);
+}
+
+function getContextAttachmentArgs({
+  mode,
+  eflowContextSummary,
+  eflowContextJson,
+}: {
+  mode: AIChatContextAttachmentMode;
+  eflowContextSummary: string;
+  eflowContextJson: string;
+}): { eflowContextSummary?: string; eflowContextJson?: string } {
+  if (mode === "summary") {
+    return { eflowContextSummary };
+  }
+
+  if (mode === "full" && eflowContextJson) {
+    return { eflowContextJson };
+  }
+
+  return {};
+}
+
+function getSelectedContextText({
+  mode,
+  eflowContextSummary,
+  eflowContextJson,
+}: {
+  mode: AIChatContextAttachmentMode;
+  eflowContextSummary: string;
+  eflowContextJson: string;
+}): string {
+  if (mode === "summary") return eflowContextSummary;
+  if (mode === "full") return eflowContextJson;
+  return "";
+}
+
+function formatComposedPromptPreview(prompt: BuiltAIChatPrompt): string {
+  return ["SYSTEM PROMPT", prompt.systemPrompt, "USER PROMPT", prompt.userPrompt].join("\n\n");
 }
 
 function getPromptModeNote(mode: AIChatPromptMode): string {

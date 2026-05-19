@@ -1465,10 +1465,12 @@ Provider / API key behavior:
 
 Context attachment behavior:
 
-- "Attach current EFlow Context" is explicit opt-in.
-- When enabled and a graph exists, the console attaches current `eflow-context/v0.1` JSON to the model prompt.
-- The UI shows character count and rough token estimate.
-- The UI warns that attached EFlow Context is sent to the selected external provider.
+- Default context mode is "No context".
+- "No context" sends only the system safety instructions, selected prompt-mode instructions, and the user message.
+- "Summary context" sends compact project state without the full context JSON block.
+- "Full EFlow Context" is explicit opt-in and sends the complete `eflow-context/v0.1` JSON on every message while selected.
+- The UI shows character count and rough token estimate for the selected context mode.
+- The UI warns that Full context may use significantly more tokens.
 - Without a graph, the console still works and explains that no EFlow Context is available yet.
 
 Prompt modes:
@@ -1486,7 +1488,7 @@ Validation coverage:
 - Command-conversion prompt coverage checks `eflow-command/v0.1`, `reviewStatus`, and `lifecycleStatus`.
 - Raw idea prompt coverage checks `EngineeringFlowInput`.
 - Codex milestone prompt coverage checks `npm run validate:example` and `npm run build`.
-- Attached context prompt coverage checks `eflow-context/v0.1` and nonzero attached context size.
+- Context prompt coverage checks No context excludes `eflow-context/v0.1`, Summary context includes only the summary marker, and Full context includes `CURRENT EFLOW CONTEXT JSON` with `eflow-context/v0.1`.
 - Existing validation still checks 52 nodes, 93 edges, and 3 blocking questions.
 
 Validation results:

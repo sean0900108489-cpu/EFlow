@@ -1,5 +1,7 @@
 import { EFLOW_COMMAND_SCHEMA_VERSION } from "../types/eflowCommand";
 import { EFLOW_CONTEXT_SCHEMA_VERSION } from "../types/eflowContext";
+import type { EngineeringFlowGraph, EngineeringFlowInput } from "../types/engineeringFlow";
+import { buildGraphTrustSummary, isBlockingQuestionNode } from "./trustSummary";
 
 export const AI_CHAT_PROMPT_MODES = [
   {
@@ -30,9 +32,27 @@ export const AI_CHAT_PROMPT_MODES = [
 
 export type AIChatPromptMode = (typeof AI_CHAT_PROMPT_MODES)[number]["id"];
 
+export const AI_CHAT_CONTEXT_ATTACHMENT_MODES = [
+  {
+    id: "none",
+    label: "No context",
+  },
+  {
+    id: "summary",
+    label: "Summary context",
+  },
+  {
+    id: "full",
+    label: "Full EFlow Context",
+  },
+] as const;
+
+export type AIChatContextAttachmentMode = (typeof AI_CHAT_CONTEXT_ATTACHMENT_MODES)[number]["id"];
+
 export interface BuildAIChatPromptArgs {
   mode: AIChatPromptMode;
   userMessage: string;
+  eflowContextSummary?: string;
   eflowContextJson?: string;
 }
 
@@ -45,12 +65,15 @@ export interface BuiltAIChatPrompt {
 export function buildAIChatPrompt({
   mode,
   userMessage,
+  eflowContextSummary,
   eflowContextJson,
 }: BuildAIChatPromptArgs): BuiltAIChatPrompt {
   const trimmedMessage = userMessage.trim();
   const contextBlock = eflowContextJson
-    ? buildContextAttachmentBlock(eflowContextJson)
-    : "";
+    ? buildFullContextAttachmentBlock(eflowContextJson)
+    : eflowContextSummary
+      ? buildSummaryContextAttachmentBlock(eflowContextSummary)
+      : "";
   const modeInstruction = getModeInstruction(mode);
   const userPrompt = [contextBlock, modeInstruction, buildUserMessageBlock(trimmedMessage)]
     .filter(Boolean)
@@ -59,8 +82,54 @@ export function buildAIChatPrompt({
   return {
     systemPrompt: buildSystemPrompt(),
     userPrompt,
-    attachedContextSize: eflowContextJson?.length ?? 0,
+    attachedContextSize: eflowContextJson?.length ?? eflowContextSummary?.length ?? 0,
   };
+}
+
+export function buildAIChatContextSummary({
+  input,
+  graph,
+}: {
+  input: EngineeringFlowInput;
+  graph: EngineeringFlowGraph | null;
+}): string {
+  const inputShape = [
+    `${input.userTypes.length} user types`,
+    `${input.mainScreens.length} screens`,
+    `${input.coreFunctions.length} core functions`,
+    `${input.flowSteps.length} flow steps`,
+    `${input.dataObjects.length} data objects`,
+    `${input.aiRoles.length} AI roles`,
+    `${input.unknowns.length} unknowns`,
+  ].join(", ");
+
+  if (!graph) {
+    return [
+      `Project: ${input.projectName}`,
+      `Intent: ${input.projectIntent}`,
+      `Input shape: ${inputShape}.`,
+      "Graph state: no graph has been generated or imported yet.",
+    ].join("\n");
+  }
+
+  const trustSummary = buildGraphTrustSummary(graph);
+  const blockingQuestions = graph.nodes
+    .filter(isBlockingQuestionNode)
+    .slice(0, 3)
+    .map((node) => `- ${node.title}`);
+
+  return [
+    `Project: ${input.projectName}`,
+    `Intent: ${input.projectIntent}`,
+    `Input shape: ${inputShape}.`,
+    `Graph state: ${trustSummary.totalNodes} nodes and ${trustSummary.totalEdges} edges.`,
+    `Node review state: ${trustSummary.confirmedNodes} confirmed, ${trustSummary.suggestedNodes} suggested, ${trustSummary.needsReviewNodes} needs review.`,
+    `Edge review state: ${trustSummary.confirmedEdges} confirmed, ${trustSummary.suggestedEdges} suggested, ${trustSummary.rejectedEdges} rejected.`,
+    `Blocking questions: ${trustSummary.blockingQuestions}.`,
+    blockingQuestions.length > 0 ? `Top blocking questions:\n${blockingQuestions.join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function buildSystemPrompt(): string {
@@ -70,13 +139,21 @@ function buildSystemPrompt(): string {
     "Legacy node.status and edge.status are review/confirmation status. Formal AI-facing review status is reviewStatus. Implementation progress is lifecycleStatus.",
     "LLM chat responses are drafts only. They must not be treated as truth, must not mutate the graph, and must not auto-apply commands.",
     `Any generated ${EFLOW_COMMAND_SCHEMA_VERSION} must still go through EFlow Local Command Import: Validate -> Dry Run -> Apply.`,
-    `When attached, ${EFLOW_CONTEXT_SCHEMA_VERSION} is a read-only context snapshot for reasoning.`,
+    "Any attached project context is read-only context for reasoning.",
   ].join("\n");
 }
 
-function buildContextAttachmentBlock(eflowContextJson: string): string {
+function buildSummaryContextAttachmentBlock(eflowContextSummary: string): string {
   return [
-    `Attached current EFlow Context (${EFLOW_CONTEXT_SCHEMA_VERSION}):`,
+    "CURRENT EFLOW CONTEXT SUMMARY:",
+    "This is compact project state, not the full context JSON.",
+    eflowContextSummary,
+  ].join("\n");
+}
+
+function buildFullContextAttachmentBlock(eflowContextJson: string): string {
+  return [
+    `CURRENT EFLOW CONTEXT JSON (${EFLOW_CONTEXT_SCHEMA_VERSION}):`,
     "```json",
     eflowContextJson,
     "```",

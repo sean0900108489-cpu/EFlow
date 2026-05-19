@@ -9,7 +9,9 @@ import {
   validateEFlowAuditLog,
 } from "../src/lib/auditLog";
 import {
+  AI_CHAT_CONTEXT_ATTACHMENT_MODES,
   AI_CHAT_PROMPT_MODES,
+  buildAIChatContextSummary,
   buildAIChatPrompt,
 } from "../src/lib/buildAIChatPrompt";
 import {
@@ -450,6 +452,11 @@ assert.deepEqual(
   ],
   "AI chat prompt modes should include the required collaboration modes",
 );
+assert.deepEqual(
+  AI_CHAT_CONTEXT_ATTACHMENT_MODES.map((mode) => mode.label),
+  ["No context", "Summary context", "Full EFlow Context"],
+  "AI chat context attachment modes should be explicit and default to No context in the UI",
+);
 const commandConversionPrompt = buildAIChatPrompt({
   mode: "codex_report_to_command",
   userMessage: "Codex completed implementation.",
@@ -486,18 +493,64 @@ assert.ok(
   codexMilestonePrompt.userPrompt.includes("npm run build"),
   "Codex milestone prompt should require build",
 );
-const attachedContextPrompt = buildAIChatPrompt({
+const noContextPrompt = buildAIChatPrompt({
+  mode: "free_chat",
+  userMessage: "Summarize current graph.",
+});
+assert.ok(
+  !noContextPrompt.systemPrompt.includes(EFLOW_CONTEXT_SCHEMA_VERSION) &&
+    !noContextPrompt.userPrompt.includes(EFLOW_CONTEXT_SCHEMA_VERSION),
+  "No context prompt should exclude eflow-context/v0.1",
+);
+assert.ok(
+  !noContextPrompt.userPrompt.includes("CURRENT EFLOW CONTEXT JSON") &&
+    !noContextPrompt.userPrompt.includes('"nodes"') &&
+    !noContextPrompt.userPrompt.includes('"edges"'),
+  "No context prompt should exclude full context and graph JSON",
+);
+assert.equal(noContextPrompt.attachedContextSize, 0, "No context prompt should report no attached context");
+
+const summaryContextPrompt = buildAIChatPrompt({
+  mode: "free_chat",
+  userMessage: "Summarize current graph.",
+  eflowContextSummary: buildAIChatContextSummary({
+    input: todoThoughtUniverseExample,
+    graph,
+  }),
+});
+assert.ok(
+  summaryContextPrompt.userPrompt.includes("CURRENT EFLOW CONTEXT SUMMARY"),
+  "Summary context prompt should include the summary marker",
+);
+assert.ok(
+  !summaryContextPrompt.userPrompt.includes("CURRENT EFLOW CONTEXT JSON"),
+  "Summary context prompt should not include the full JSON marker",
+);
+assert.ok(
+  !summaryContextPrompt.userPrompt.includes(EFLOW_CONTEXT_SCHEMA_VERSION),
+  "Summary context prompt should not include eflow-context/v0.1",
+);
+assert.ok(
+  summaryContextPrompt.attachedContextSize > 0,
+  "Summary context prompt should report attached summary size",
+);
+
+const fullContextPrompt = buildAIChatPrompt({
   mode: "free_chat",
   userMessage: "Summarize current graph.",
   eflowContextJson: JSON.stringify(eflowContext, null, 2),
 });
 assert.ok(
-  attachedContextPrompt.userPrompt.includes("eflow-context/v0.1"),
-  "attached context block should mention eflow-context/v0.1",
+  fullContextPrompt.userPrompt.includes("CURRENT EFLOW CONTEXT JSON"),
+  "Full context prompt should include the full JSON marker",
 );
 assert.ok(
-  attachedContextPrompt.attachedContextSize > 0,
-  "attached context prompt should report context size",
+  fullContextPrompt.userPrompt.includes("eflow-context/v0.1"),
+  "Full context block should mention eflow-context/v0.1",
+);
+assert.ok(
+  fullContextPrompt.attachedContextSize > 0,
+  "Full context prompt should report context size",
 );
 
 assert.ok(isEFlowWorkspaceDocument(workspace), "workspace document should validate");

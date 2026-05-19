@@ -3350,7 +3350,8 @@
   align-content: center;
 }
 
-.ai-chat-safety-copy {
+.ai-chat-safety-copy,
+.ai-chat-context-helper {
   display: grid;
   gap: 6px;
   padding: 12px 14px;
@@ -3362,6 +3363,7 @@
 }
 
 .ai-chat-safety-copy p,
+.ai-chat-context-helper p,
 .ai-chat-mode-note,
 .ai-chat-warning,
 .ai-chat-context-meter,
@@ -3889,6 +3891,7 @@
 .review-empty,
 .ai-chat-title-block p:not(.eyebrow),
 .ai-chat-safety-copy p,
+.ai-chat-context-helper p,
 .ai-chat-mode-note,
 .ai-chat-context-meter,
 .ai-chat-status {
@@ -3904,6 +3907,7 @@
 .summary-grid span,
 .check-field,
 .ai-chat-safety-copy,
+.ai-chat-context-helper,
 .ai-chat-context-meter,
 .ai-chat-mode-note,
 .ai-chat-message {
