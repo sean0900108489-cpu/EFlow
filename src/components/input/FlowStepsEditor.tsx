@@ -1,5 +1,6 @@
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 import { makeId } from "../../lib/ids";
+import { useLanguage } from "../../lib/i18n/language-context";
 
 type FlowStep = EngineeringFlowInput["flowSteps"][number];
 
@@ -9,6 +10,8 @@ type FlowStepsEditorProps = {
 };
 
 export function FlowStepsEditor({ flowSteps, onChange }: FlowStepsEditorProps) {
+  const { t } = useLanguage();
+
   function updateFlowStep(id: string, patch: Partial<FlowStep>) {
     onChange(flowSteps.map((step) => (step.id === id ? { ...step, ...patch } : step)));
   }
@@ -32,13 +35,13 @@ export function FlowStepsEditor({ flowSteps, onChange }: FlowStepsEditorProps) {
 
   return (
     <section className="editor-section">
-      <SectionHeader title="Flow steps" count={flowSteps.length} onAdd={addFlowStep} />
+      <SectionHeader title={t("input.flowSteps.title")} count={flowSteps.length} onAdd={addFlowStep} />
       {flowSteps.map((step) => (
         <article className="editable-card" key={step.id}>
           <CardHeader id={step.id} onDelete={() => deleteFlowStep(step.id)} />
           <div className="two-column-fields">
             <label className="field">
-              <span>Step</span>
+              <span>{t("input.flowSteps.step")}</span>
               <input
                 type="number"
                 min="1"
@@ -49,7 +52,7 @@ export function FlowStepsEditor({ flowSteps, onChange }: FlowStepsEditorProps) {
               />
             </label>
             <label className="field">
-              <span>Title</span>
+              <span>{t("input.flowSteps.stepTitle")}</span>
               <input
                 value={step.title}
                 onChange={(event) => updateFlowStep(step.id, { title: event.target.value })}
@@ -57,7 +60,7 @@ export function FlowStepsEditor({ flowSteps, onChange }: FlowStepsEditorProps) {
             </label>
           </div>
           <label className="field">
-            <span>Description</span>
+            <span>{t("input.common.description")}</span>
             <textarea
               rows={3}
               value={step.description}
@@ -65,7 +68,7 @@ export function FlowStepsEditor({ flowSteps, onChange }: FlowStepsEditorProps) {
             />
           </label>
           <label className="field">
-            <span>Related screen ID</span>
+            <span>{t("input.flowSteps.relatedScreenId")}</span>
             <input
               value={step.relatedScreenId ?? ""}
               onChange={(event) =>
@@ -75,7 +78,7 @@ export function FlowStepsEditor({ flowSteps, onChange }: FlowStepsEditorProps) {
             />
           </label>
           <label className="field">
-            <span>Related function IDs</span>
+            <span>{t("input.common.relatedFunctionIds")}</span>
             <input
               value={(step.relatedFunctionIds ?? []).join(", ")}
               onChange={(event) =>
@@ -106,25 +109,29 @@ function SectionHeader({
   count: number;
   onAdd: () => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="section-header">
       <div>
         <h3>{title}</h3>
-        <p>{count} items</p>
+        <p>{t("input.common.items", { count })}</p>
       </div>
       <button className="mini-button" type="button" onClick={onAdd}>
-        Add
+        {t("input.common.add")}
       </button>
     </div>
   );
 }
 
 function CardHeader({ id, onDelete }: { id: string; onDelete: () => void }) {
+  const { t } = useLanguage();
+
   return (
     <div className="card-header">
       <span>{id}</span>
       <button className="danger-button" type="button" onClick={onDelete}>
-        Delete
+        {t("input.common.delete")}
       </button>
     </div>
   );

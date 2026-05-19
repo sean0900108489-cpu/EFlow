@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createAuditEvent } from "../../lib/auditLog";
+import { useLanguage } from "../../lib/i18n/language-context";
 import {
   applyEFlowCommandToGraph,
   dryRunEFlowCommandOnGraph,
@@ -31,6 +32,7 @@ export function LocalCommandImportPanel({
   onApplyGraph,
   onRecordAuditEvent,
 }: LocalCommandImportPanelProps) {
+  const { t } = useLanguage();
   const [commandText, setCommandText] = useState("");
   const [message, setMessage] = useState<CommandMessage | null>(null);
   const [validationResult, setValidationResult] =
@@ -87,8 +89,8 @@ export function LocalCommandImportPanel({
     setMessage({
       type: graph ? "info" : "error",
       text: graph
-        ? `Example command targets node "${exampleNodeId}".`
-        : "Example inserted with a placeholder node id. Generate or import a graph before dry-run/apply.",
+        ? t("commandImport.status.exampleTargetsNode", { id: exampleNodeId })
+        : t("commandImport.status.examplePlaceholder"),
     });
   }
 
@@ -105,7 +107,7 @@ export function LocalCommandImportPanel({
 
     setMessage({
       type: "success",
-      text: "Command is valid.",
+      text: t("commandImport.status.valid"),
     });
   }
 
@@ -117,7 +119,7 @@ export function LocalCommandImportPanel({
       setApplyResult(null);
       setMessage({
         type: "error",
-        text: "Generate or import an engineering graph before dry-running commands.",
+        text: t("commandImport.status.noGraphDryRun"),
       });
       return;
     }
@@ -126,9 +128,7 @@ export function LocalCommandImportPanel({
     setApplyResult(result);
     setMessage({
       type: result.ok ? "success" : "error",
-      text: result.ok
-        ? "Dry run completed. Graph state was not changed."
-        : "Dry run failed. Graph state was not changed.",
+      text: result.ok ? t("commandImport.status.dryRunOk") : t("commandImport.status.dryRunFailed"),
     });
   }
 
@@ -140,7 +140,7 @@ export function LocalCommandImportPanel({
       setApplyResult(null);
       setMessage({
         type: "error",
-        text: "Generate or import an engineering graph before applying commands.",
+        text: t("commandImport.status.noGraphApply"),
       });
       return;
     }
@@ -178,7 +178,7 @@ export function LocalCommandImportPanel({
       );
       setMessage({
         type: "success",
-        text: "Command applied to the current graph.",
+        text: t("commandImport.status.applied"),
       });
       return;
     }
@@ -186,14 +186,14 @@ export function LocalCommandImportPanel({
     if (result.ok && result.mode === "dry_run") {
       setMessage({
         type: "info",
-        text: "Command mode is dry_run. Graph state was not changed.",
+        text: t("commandImport.status.dryRunMode"),
       });
       return;
     }
 
     setMessage({
       type: "error",
-      text: "Command failed. Graph state was not changed.",
+      text: t("commandImport.status.failed"),
     });
   }
 
@@ -207,7 +207,9 @@ export function LocalCommandImportPanel({
       setValidationResult(null);
       setMessage({
         type: "error",
-        text: error instanceof Error ? `Invalid JSON. ${error.message}` : "Invalid JSON.",
+        text: error instanceof Error
+          ? t("commandImport.error.invalidJsonWithMessage", { message: error.message })
+          : t("commandImport.error.invalidJson"),
       });
       return null;
     }
@@ -218,7 +220,7 @@ export function LocalCommandImportPanel({
     if (!nextValidationResult.ok) {
       setMessage({
         type: "error",
-        text: "Command validation failed. Graph state was not changed.",
+        text: t("commandImport.error.validationFailed"),
       });
       return null;
     }
@@ -230,33 +232,27 @@ export function LocalCommandImportPanel({
     <section className="local-command-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Local command</p>
-          <h2>AI command import</h2>
+          <p className="eyebrow">{t("commandImport.header.eyebrow")}</p>
+          <h2>{t("commandImport.header.title")}</h2>
         </div>
         <span className={`status-indicator ${canUseGraph ? "status-ok" : "status-warn"}`}>
-          {canUseGraph ? "Graph ready" : "Validation only"}
+          {canUseGraph ? t("commandImport.header.graphReady") : t("commandImport.header.validationOnly")}
         </span>
       </div>
-      <p className="command-helper">
-        Paste an eflow-command/v0.1 JSON command to validate, dry-run, or apply local graph
-        updates. This stays in the browser and only changes the current graph after Apply Command.
-      </p>
+      <p className="command-helper">{t("commandImport.helper.body")}</p>
       <p className="command-interop-note">
-        Accepted schema: <strong>{EFLOW_COMMAND_SCHEMA_VERSION}</strong>. Recommended workflow:
-        Validate -&gt; Dry Run -&gt; Apply. reviewStatus updates confirmation state;
-        lifecycleStatus updates implementation progress.
+        {t("commandImport.helper.acceptedSchema")} <strong>{EFLOW_COMMAND_SCHEMA_VERSION}</strong>.{" "}
+        {t("commandImport.helper.workflow")}
       </p>
       {!graph ? (
-        <p className="command-note">
-          Generate or import an engineering graph before dry-running or applying commands.
-        </p>
+        <p className="command-note">{t("commandImport.helper.noGraph")}</p>
       ) : null}
       <div className="command-actions">
         <button className="mini-button" type="button" onClick={insertExampleCommand}>
-          Insert example command
+          {t("commandImport.actions.insertExample")}
         </button>
         <button className="mini-button" type="button" onClick={clearCommand}>
-          Clear
+          {t("commandImport.actions.clear")}
         </button>
       </div>
       <textarea
@@ -269,7 +265,7 @@ export function LocalCommandImportPanel({
           setApplyResult(null);
         }}
         placeholder='{"schemaVersion":"eflow-command/v0.1","operations":[...]}'
-        aria-label="Local AI command JSON"
+        aria-label={t("commandImport.input.ariaLabel")}
       />
       <div className="command-actions">
         <button
@@ -278,7 +274,7 @@ export function LocalCommandImportPanel({
           onClick={validateCommand}
           disabled={!hasCommandText}
         >
-          Validate
+          {t("commandImport.actions.validate")}
         </button>
         <button
           className="button button-secondary"
@@ -286,7 +282,7 @@ export function LocalCommandImportPanel({
           onClick={dryRunCommand}
           disabled={!hasCommandText || !canUseGraph}
         >
-          Dry Run
+          {t("commandImport.actions.dryRun")}
         </button>
         <button
           className="button button-primary"
@@ -294,33 +290,47 @@ export function LocalCommandImportPanel({
           onClick={applyCommand}
           disabled={!hasCommandText || !canUseGraph}
         >
-          Apply Command
+          {t("commandImport.actions.apply")}
         </button>
       </div>
       {message ? <p className={`command-message command-message-${message.type}`}>{message.text}</p> : null}
       {validationResult ? (
         <div className="command-validation">
           <div className="command-result-summary">
-            <span>{validationResult.ok ? "Validation ok" : "Validation failed"}</span>
-            <span>{validationResult.errors.length} errors</span>
-            <span>{validationResult.warnings.length} warnings</span>
+            <span>
+              {validationResult.ok
+                ? t("commandImport.results.validationOk")
+                : t("commandImport.results.validationFailed")}
+            </span>
+            <span>{t("commandImport.results.errorsCount", { count: validationResult.errors.length })}</span>
+            <span>{t("commandImport.results.warningsCount", { count: validationResult.warnings.length })}</span>
           </div>
-          <CommandIssueList title="Errors" issues={validationResult.errors} />
-          <CommandIssueList title="Warnings" issues={validationResult.warnings} />
+          <CommandIssueList title={t("commandImport.results.errors")} issues={validationResult.errors} />
+          <CommandIssueList title={t("commandImport.results.warnings")} issues={validationResult.warnings} />
         </div>
       ) : null}
       {resultSummary ? (
         <div className="command-result">
           <div className="command-result-summary">
-            <span>{resultSummary.state}</span>
+            <span>
+              {resultSummary.state === "ok"
+                ? t("commandImport.results.stateOk")
+                : t("commandImport.results.stateFailed")}
+            </span>
             <span>{resultSummary.mode}</span>
-            <span>{resultSummary.changes} changes</span>
-            <span>{resultSummary.errors} errors</span>
-            <span>{resultSummary.warnings} warnings</span>
+            <span>{t("commandImport.results.changesCount", { count: resultSummary.changes })}</span>
+            <span>{t("commandImport.results.errorsCount", { count: resultSummary.errors })}</span>
+            <span>{t("commandImport.results.warningsCount", { count: resultSummary.warnings })}</span>
           </div>
-          <CommandChangeList result={applyResult} />
-          <CommandIssueList title="Apply errors" issues={applyResult?.errors ?? []} />
-          <CommandIssueList title="Apply warnings" issues={applyResult?.warnings ?? []} />
+          <CommandChangeList title={t("commandImport.results.changes")} result={applyResult} />
+          <CommandIssueList
+            title={t("commandImport.results.applyErrors")}
+            issues={applyResult?.errors ?? []}
+          />
+          <CommandIssueList
+            title={t("commandImport.results.applyWarnings")}
+            issues={applyResult?.warnings ?? []}
+          />
         </div>
       ) : null}
     </section>
@@ -350,12 +360,12 @@ function CommandIssueList({
   );
 }
 
-function CommandChangeList({ result }: { result: EFlowCommandApplyResult | null }) {
+function CommandChangeList({ title, result }: { title: string; result: EFlowCommandApplyResult | null }) {
   if (!result || result.changes.length === 0) return null;
 
   return (
     <div className="command-list">
-      <h3>Changes</h3>
+      <h3>{title}</h3>
       {result.changes.map((change) => (
         <div className="command-change" key={`${change.operationIndex}-${change.changeType}`}>
           <strong>{change.changeType}</strong>

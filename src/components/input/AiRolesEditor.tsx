@@ -1,5 +1,6 @@
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 import { makeId } from "../../lib/ids";
+import { useLanguage } from "../../lib/i18n/language-context";
 
 type AiRole = EngineeringFlowInput["aiRoles"][number];
 
@@ -9,6 +10,8 @@ type AiRolesEditorProps = {
 };
 
 export function AiRolesEditor({ aiRoles, onChange }: AiRolesEditorProps) {
+  const { t } = useLanguage();
+
   function updateAiRole(id: string, patch: Partial<AiRole>) {
     onChange(aiRoles.map((role) => (role.id === id ? { ...role, ...patch } : role)));
   }
@@ -32,12 +35,12 @@ export function AiRolesEditor({ aiRoles, onChange }: AiRolesEditorProps) {
 
   return (
     <section className="editor-section">
-      <SectionHeader title="AI roles" count={aiRoles.length} onAdd={addAiRole} />
+      <SectionHeader title={t("input.aiRoles.title")} count={aiRoles.length} onAdd={addAiRole} />
       {aiRoles.map((role) => (
         <article className="editable-card" key={role.id}>
           <CardHeader id={role.id} onDelete={() => deleteAiRole(role.id)} />
           <label className="field">
-            <span>Task</span>
+            <span>{t("input.aiRoles.task")}</span>
             <input
               value={role.task}
               onChange={(event) => updateAiRole(role.id, { task: event.target.value })}
@@ -51,10 +54,10 @@ export function AiRolesEditor({ aiRoles, onChange }: AiRolesEditorProps) {
                 updateAiRole(role.id, { requiresHumanConfirmation: event.target.checked })
               }
             />
-            <span>Requires human confirmation</span>
+            <span>{t("input.aiRoles.requiresHumanConfirmation")}</span>
           </label>
           <label className="field">
-            <span>Related screen IDs</span>
+            <span>{t("input.common.relatedScreenIds")}</span>
             <input
               value={(role.relatedScreenIds ?? []).join(", ")}
               onChange={(event) =>
@@ -64,7 +67,7 @@ export function AiRolesEditor({ aiRoles, onChange }: AiRolesEditorProps) {
             />
           </label>
           <label className="field">
-            <span>Related function IDs</span>
+            <span>{t("input.common.relatedFunctionIds")}</span>
             <input
               value={(role.relatedFunctionIds ?? []).join(", ")}
               onChange={(event) =>
@@ -95,25 +98,29 @@ function SectionHeader({
   count: number;
   onAdd: () => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="section-header">
       <div>
         <h3>{title}</h3>
-        <p>{count} items</p>
+        <p>{t("input.common.items", { count })}</p>
       </div>
       <button className="mini-button" type="button" onClick={onAdd}>
-        Add
+        {t("input.common.add")}
       </button>
     </div>
   );
 }
 
 function CardHeader({ id, onDelete }: { id: string; onDelete: () => void }) {
+  const { t } = useLanguage();
+
   return (
     <div className="card-header">
       <span>{id}</span>
       <button className="danger-button" type="button" onClick={onDelete}>
-        Delete
+        {t("input.common.delete")}
       </button>
     </div>
   );

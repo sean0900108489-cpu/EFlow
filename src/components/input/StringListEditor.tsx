@@ -1,3 +1,5 @@
+import { useLanguage } from "../../lib/i18n/language-context";
+
 type StringListEditorProps = {
   label: string;
   values: string[];
@@ -9,8 +11,11 @@ export function StringListEditor({
   label,
   values,
   onChange,
-  placeholder = "Add item",
+  placeholder,
 }: StringListEditorProps) {
+  const { t } = useLanguage();
+  const effectivePlaceholder = placeholder ?? t("input.common.addItemPlaceholder");
+
   function updateValue(index: number, value: string) {
     onChange(values.map((item, itemIndex) => (itemIndex === index ? value : item)));
   }
@@ -28,16 +33,16 @@ export function StringListEditor({
       <div className="field-row">
         <label>{label}</label>
         <button className="mini-button" type="button" onClick={addValue}>
-          Add
+          {t("input.common.add")}
         </button>
       </div>
-      {values.length === 0 ? <p className="muted-small">No items yet.</p> : null}
+      {values.length === 0 ? <p className="muted-small">{t("input.common.noItemsYet")}</p> : null}
       {values.map((value, index) => (
         <div className="inline-edit" key={`${label}-${index}`}>
           <input
             value={value}
             onChange={(event) => updateValue(index, event.target.value)}
-            placeholder={placeholder}
+            placeholder={effectivePlaceholder}
           />
           <button className="icon-button" type="button" onClick={() => removeValue(index)}>
             x

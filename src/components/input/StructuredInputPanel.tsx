@@ -36,7 +36,7 @@ export function StructuredInputPanel({
     >
       <ProjectIntentEditor input={input} onChange={onChange} />
       {inputDirtySinceGeneration ? (
-        <div className="dirty-note">Input changed. Generate again to refresh graph.</div>
+        <div className="dirty-note">{t("input.status.dirty")}</div>
       ) : null}
       <ImportInputJson onImport={onImport} />
       <UserTypesEditor

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { isEngineeringFlowInput } from "../../lib/workspaceValidation";
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 
@@ -7,6 +8,7 @@ type ImportInputJsonProps = {
 };
 
 export function ImportInputJson({ onImport }: ImportInputJsonProps) {
+  const { t } = useLanguage();
   const [jsonText, setJsonText] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -15,19 +17,19 @@ export function ImportInputJson({ onImport }: ImportInputJsonProps) {
       const parsed = JSON.parse(jsonText) as Partial<EngineeringFlowInput>;
 
       if (!parsed || parsed.schemaVersion !== "engineering-flow-input/v0") {
-        throw new Error('Expected schemaVersion "engineering-flow-input/v0".');
+        throw new Error(t("input.importJson.error.expectedSchema"));
       }
 
       if (!isEngineeringFlowInput(parsed)) {
-        throw new Error("JSON is missing required EngineeringFlowInput fields.");
+        throw new Error(t("input.importJson.error.missingFields"));
       }
 
       onImport(parsed as EngineeringFlowInput);
-      setMessage({ type: "success", text: "EngineeringFlowInput JSON loaded." });
+      setMessage({ type: "success", text: t("input.importJson.status.loaded") });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Could not import JSON.",
+        text: error instanceof Error ? error.message : t("input.importJson.error.couldNotImport"),
       });
     }
   }
@@ -36,11 +38,11 @@ export function ImportInputJson({ onImport }: ImportInputJsonProps) {
     <section className="editor-section import-section">
       <div className="section-header">
         <div>
-          <h3>Import input JSON</h3>
-          <p>Paste an EngineeringFlowInput object</p>
+          <h3>{t("input.importJson.title")}</h3>
+          <p>{t("input.importJson.subtitle")}</p>
         </div>
         <button className="mini-button" type="button" onClick={importJson}>
-          Import
+          {t("input.importJson.action")}
         </button>
       </div>
       <textarea

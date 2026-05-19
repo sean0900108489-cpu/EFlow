@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { buildAuditLogSummary } from "../../lib/auditLog";
+import { useLanguage } from "../../lib/i18n/language-context";
+import type { TranslationKey } from "../../lib/i18n/types";
 import type { EFlowAuditEvent } from "../../types/eflowAudit";
 
 type AuditLogPanelProps = {
@@ -7,30 +9,33 @@ type AuditLogPanelProps = {
 };
 
 export function AuditLogPanel({ auditLog }: AuditLogPanelProps) {
+  const { t } = useLanguage();
   const summary = useMemo(() => buildAuditLogSummary(auditLog), [auditLog]);
 
   return (
     <section className="audit-log-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Audit Log</p>
-          <h2>Change History</h2>
+          <p className="eyebrow">{t("auditLog.eyebrow")}</p>
+          <h2>{t("auditLog.title")}</h2>
         </div>
-        <strong className="audit-log-total-pill">{summary.totalEvents} events</strong>
+        <strong className="audit-log-total-pill">
+          {t("auditLog.totalEvents", { count: summary.totalEvents })}
+        </strong>
       </div>
       {summary.totalEvents === 0 ? (
-        <p className="audit-log-empty">No changes recorded yet.</p>
+        <p className="audit-log-empty">{t("auditLog.empty")}</p>
       ) : (
         <div className="audit-log-list">
           {summary.recentEvents.map((event) => (
             <article className="audit-log-event" key={event.id}>
               <div className="audit-log-event-topline">
                 <time dateTime={event.createdAt}>{formatAuditTime(event.createdAt)}</time>
-                <span>{formatAuditSource(event.source)}</span>
+                <span>{formatAuditSource(event.source, t)}</span>
               </div>
               <p>{event.summary}</p>
               <div className="audit-log-meta-row">
-                <span>{formatAuditEventType(event.eventType)}</span>
+                <span>{formatAuditEventType(event.eventType, t)}</span>
                 {event.target ? (
                   <span>
                     {event.target.type}
@@ -58,32 +63,35 @@ function formatAuditTime(value: string): string {
   });
 }
 
-function formatAuditEventType(eventType: string): string {
-  const labels: Record<string, string> = {
-    graph_generated: "Graph generated",
-    graph_replaced: "Graph replaced",
-    workspace_imported: "Workspace imported",
-    engineering_input_imported: "Input imported",
-    full_ai_context_imported: "Full context imported",
-    manual_node_created: "Manual node created",
-    manual_edge_created: "Manual edge created",
-    ai_command_applied: "AI command applied",
-    node_review_status_changed: "Node review changed",
-    node_lifecycle_status_changed: "Node lifecycle changed",
-    edge_review_status_changed: "Edge review changed",
-    edge_lifecycle_status_changed: "Edge lifecycle changed",
+function formatAuditEventType(
+  eventType: string,
+  translate: (key: TranslationKey) => string,
+): string {
+  const labels: Record<string, TranslationKey> = {
+    graph_generated: "auditLog.eventType.graphGenerated",
+    graph_replaced: "auditLog.eventType.graphReplaced",
+    workspace_imported: "auditLog.eventType.workspaceImported",
+    engineering_input_imported: "auditLog.eventType.inputImported",
+    full_ai_context_imported: "auditLog.eventType.fullContextImported",
+    manual_node_created: "auditLog.eventType.manualNodeCreated",
+    manual_edge_created: "auditLog.eventType.manualEdgeCreated",
+    ai_command_applied: "auditLog.eventType.aiCommandApplied",
+    node_review_status_changed: "auditLog.eventType.nodeReviewChanged",
+    node_lifecycle_status_changed: "auditLog.eventType.nodeLifecycleChanged",
+    edge_review_status_changed: "auditLog.eventType.edgeReviewChanged",
+    edge_lifecycle_status_changed: "auditLog.eventType.edgeLifecycleChanged",
   };
 
-  return labels[eventType] ?? eventType;
+  return labels[eventType] ? translate(labels[eventType]) : eventType;
 }
 
-function formatAuditSource(source: string): string {
-  const labels: Record<string, string> = {
-    manual_ui: "Manual UI",
-    ai_command: "AI command",
-    workspace: "Workspace",
-    system: "System",
+function formatAuditSource(source: string, translate: (key: TranslationKey) => string): string {
+  const labels: Record<string, TranslationKey> = {
+    manual_ui: "auditLog.source.manualUi",
+    ai_command: "auditLog.source.aiCommand",
+    workspace: "auditLog.source.workspace",
+    system: "auditLog.source.system",
   };
 
-  return labels[source] ?? source;
+  return labels[source] ? translate(labels[source]) : source;
 }

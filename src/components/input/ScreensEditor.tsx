@@ -1,5 +1,6 @@
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 import { makeId } from "../../lib/ids";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { StringListEditor } from "./StringListEditor";
 
 type Screen = EngineeringFlowInput["mainScreens"][number];
@@ -10,6 +11,8 @@ type ScreensEditorProps = {
 };
 
 export function ScreensEditor({ screens, onChange }: ScreensEditorProps) {
+  const { t } = useLanguage();
+
   function updateScreen(id: string, patch: Partial<Screen>) {
     onChange(screens.map((screen) => (screen.id === id ? { ...screen, ...patch } : screen)));
   }
@@ -32,19 +35,19 @@ export function ScreensEditor({ screens, onChange }: ScreensEditorProps) {
 
   return (
     <section className="editor-section">
-      <SectionHeader title="Main screens" count={screens.length} onAdd={addScreen} />
+      <SectionHeader title={t("input.screens.title")} count={screens.length} onAdd={addScreen} />
       {screens.map((screen) => (
         <article className="editable-card" key={screen.id}>
           <CardHeader id={screen.id} onDelete={() => deleteScreen(screen.id)} />
           <label className="field">
-            <span>Name</span>
+            <span>{t("input.common.name")}</span>
             <input
               value={screen.name}
               onChange={(event) => updateScreen(screen.id, { name: event.target.value })}
             />
           </label>
           <label className="field">
-            <span>Purpose</span>
+            <span>{t("input.screens.purpose")}</span>
             <textarea
               rows={3}
               value={screen.purpose}
@@ -52,10 +55,10 @@ export function ScreensEditor({ screens, onChange }: ScreensEditorProps) {
             />
           </label>
           <StringListEditor
-            label="Key actions"
+            label={t("input.screens.keyActions")}
             values={screen.keyActions}
             onChange={(keyActions) => updateScreen(screen.id, { keyActions })}
-            placeholder="Action"
+            placeholder={t("input.screens.actionPlaceholder")}
           />
         </article>
       ))}
@@ -72,25 +75,29 @@ function SectionHeader({
   count: number;
   onAdd: () => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="section-header">
       <div>
         <h3>{title}</h3>
-        <p>{count} items</p>
+        <p>{t("input.common.items", { count })}</p>
       </div>
       <button className="mini-button" type="button" onClick={onAdd}>
-        Add
+        {t("input.common.add")}
       </button>
     </div>
   );
 }
 
 function CardHeader({ id, onDelete }: { id: string; onDelete: () => void }) {
+  const { t } = useLanguage();
+
   return (
     <div className="card-header">
       <span>{id}</span>
       <button className="danger-button" type="button" onClick={onDelete}>
-        Delete
+        {t("input.common.delete")}
       </button>
     </div>
   );

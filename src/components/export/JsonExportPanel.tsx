@@ -74,18 +74,18 @@ export function JsonExportPanel({
         <section className="export-panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Export</p>
-              <h2>AI-readable JSON</h2>
+              <p className="eyebrow">{t("export.json.eyebrow")}</p>
+              <h2>{t("export.json.title")}</h2>
             </div>
           </div>
           <div className="export-actions">
-            <CopyJsonButton label="Copy EngineeringFlowInput JSON" value={input} />
+            <CopyJsonButton label={t("export.json.copyInput")} value={input} />
             <CopyJsonButton
-              label="Copy EngineeringFlowGraph JSON"
+              label={t("export.json.copyGraph")}
               value={graph}
               disabled={!graph}
             />
-            <CopyJsonButton label="Copy Full AI Context JSON" value={fullContext} />
+            <CopyJsonButton label={t("export.json.copyFullContext")} value={fullContext} />
           </div>
         </section>
       ) : null}

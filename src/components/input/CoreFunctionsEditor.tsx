@@ -1,5 +1,6 @@
 import type { EngineeringFlowInput, Priority } from "../../types/engineeringFlow";
 import { makeId } from "../../lib/ids";
+import { useLanguage } from "../../lib/i18n/language-context";
 
 type CoreFunction = EngineeringFlowInput["coreFunctions"][number];
 
@@ -11,6 +12,8 @@ type CoreFunctionsEditorProps = {
 const priorities: Priority[] = ["must_have", "should_have", "later"];
 
 export function CoreFunctionsEditor({ coreFunctions, onChange }: CoreFunctionsEditorProps) {
+  const { t } = useLanguage();
+
   function updateCoreFunction(id: string, patch: Partial<CoreFunction>) {
     onChange(coreFunctions.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
@@ -35,19 +38,23 @@ export function CoreFunctionsEditor({ coreFunctions, onChange }: CoreFunctionsEd
 
   return (
     <section className="editor-section">
-      <SectionHeader title="Core functions" count={coreFunctions.length} onAdd={addCoreFunction} />
+      <SectionHeader
+        title={t("input.coreFunctions.title")}
+        count={coreFunctions.length}
+        onAdd={addCoreFunction}
+      />
       {coreFunctions.map((item) => (
         <article className="editable-card" key={item.id}>
           <CardHeader id={item.id} onDelete={() => deleteCoreFunction(item.id)} />
           <label className="field">
-            <span>Name</span>
+            <span>{t("input.common.name")}</span>
             <input
               value={item.name}
               onChange={(event) => updateCoreFunction(item.id, { name: event.target.value })}
             />
           </label>
           <label className="field">
-            <span>Description</span>
+            <span>{t("input.common.description")}</span>
             <textarea
               rows={3}
               value={item.description}
@@ -55,7 +62,7 @@ export function CoreFunctionsEditor({ coreFunctions, onChange }: CoreFunctionsEd
             />
           </label>
           <label className="field">
-            <span>Priority</span>
+            <span>{t("input.coreFunctions.priority")}</span>
             <select
               value={item.priority}
               onChange={(event) =>
@@ -70,7 +77,7 @@ export function CoreFunctionsEditor({ coreFunctions, onChange }: CoreFunctionsEd
             </select>
           </label>
           <label className="field">
-            <span>Related screen IDs</span>
+            <span>{t("input.common.relatedScreenIds")}</span>
             <input
               value={(item.relatedScreenIds ?? []).join(", ")}
               onChange={(event) =>
@@ -82,7 +89,7 @@ export function CoreFunctionsEditor({ coreFunctions, onChange }: CoreFunctionsEd
             />
           </label>
           <label className="field">
-            <span>Related data object IDs</span>
+            <span>{t("input.coreFunctions.relatedDataObjectIds")}</span>
             <input
               value={(item.relatedDataObjectIds ?? []).join(", ")}
               onChange={(event) =>
@@ -115,25 +122,29 @@ function SectionHeader({
   count: number;
   onAdd: () => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="section-header">
       <div>
         <h3>{title}</h3>
-        <p>{count} items</p>
+        <p>{t("input.common.items", { count })}</p>
       </div>
       <button className="mini-button" type="button" onClick={onAdd}>
-        Add
+        {t("input.common.add")}
       </button>
     </div>
   );
 }
 
 function CardHeader({ id, onDelete }: { id: string; onDelete: () => void }) {
+  const { t } = useLanguage();
+
   return (
     <div className="card-header">
       <span>{id}</span>
       <button className="danger-button" type="button" onClick={onDelete}>
-        Delete
+        {t("input.common.delete")}
       </button>
     </div>
   );
