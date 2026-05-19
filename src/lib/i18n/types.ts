@@ -14,6 +14,7 @@ export const TRANSLATION_KEYS = [
   "topBar.status.inputChanged",
   "topBar.status.graphCurrent",
   "topBar.status.ready",
+  "topBar.openTutorial",
   "topBar.loadExample",
   "topBar.generateGraph",
   "topBar.copyFullContext",

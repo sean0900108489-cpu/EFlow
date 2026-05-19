@@ -52,6 +52,9 @@ export function TopBar({
         )}
         <span className="status-indicator">{autosaveStatus}</span>
         <LanguageSwitcher />
+        <a className="button button-secondary" href="/tutorial">
+          {t("topBar.openTutorial")}
+        </a>
         <button className="button button-secondary" type="button" onClick={onLoadExample}>
           {t("topBar.loadExample")}
         </button>
