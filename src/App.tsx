@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AIChatConsole } from "./components/aiChat/AIChatConsole";
 import { EngineeringFlowCanvas } from "./components/graph/EngineeringFlowCanvas";
 import { StructuredInputPanel } from "./components/input/StructuredInputPanel";
 import { AppShell } from "./components/layout/AppShell";
@@ -282,6 +283,7 @@ export default function App() {
         />
       }
     >
+      <AIChatConsole input={engineeringFlowInput} graph={engineeringFlowGraph} />
       <Workspace
         left={
           <StructuredInputPanel

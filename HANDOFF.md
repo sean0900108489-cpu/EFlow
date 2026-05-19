@@ -1432,3 +1432,101 @@ Known limitations:
 Recommended next milestone:
 
 > v1 tag / final checkpoint
+
+## Completed Checkpoint: AI Collaboration Console v0
+
+This checkpoint adds a frontend-only, personal-use AI collaboration console while preserving EFlow's local-first graph and command safety boundaries.
+
+Files changed:
+
+- `src/App.tsx`
+- `src/components/aiChat/AIChatConsole.tsx`
+- `src/lib/buildAIChatPrompt.ts`
+- `src/styles/components.css`
+- `scripts/validateExample.ts`
+- `HANDOFF.md`
+
+What was implemented:
+
+- Added a full-width AI Collaboration Console as a top-level workspace card after the TopBar / project action area and before the existing three-column workspace grid.
+- Kept the right-side AI Interop section intact for AI-Native Context Export, Local Command Import, and workspace/export tooling.
+- Added local React chat history with user/assistant messages, loading state, clear chat, copy latest assistant response, and clear API key actions.
+- Added editable provider controls for Responses-style base URL, model, API key, and optional browser-local key remembering.
+- Added direct browser `fetch` to the configured provider using an OpenAI-compatible Responses API request shape.
+- Added robust response parsing for `output_text`, Responses `output/content`, and chat-completions-style `choices`.
+- Added readable handling for missing API key, missing model, invalid URL, HTTP failures, network/CORS failures, and unexpected response shapes.
+
+Provider / API key behavior:
+
+- API key is held in React state by default.
+- If "Remember key in this browser" is checked, the key is stored in `localStorage` under `eflow.aiChat.apiKey`.
+- Clear API key removes the key from React state and localStorage.
+- API key is not stored in workspace JSON, graph JSON, context export, audit log, or command import.
+
+Context attachment behavior:
+
+- "Attach current EFlow Context" is explicit opt-in.
+- When enabled and a graph exists, the console attaches current `eflow-context/v0.1` JSON to the model prompt.
+- The UI shows character count and rough token estimate.
+- The UI warns that attached EFlow Context is sent to the selected external provider.
+- Without a graph, the console still works and explains that no EFlow Context is available yet.
+
+Prompt modes:
+
+- Free chat
+- Generate Codex milestone prompt
+- Convert Codex report to eflow-command
+- Raw idea to EngineeringFlowInput JSON
+- Progress / handoff summary
+- Strategic architecture consultation
+
+Validation coverage:
+
+- `scripts/validateExample.ts` now checks the required prompt mode labels.
+- Command-conversion prompt coverage checks `eflow-command/v0.1`, `reviewStatus`, and `lifecycleStatus`.
+- Raw idea prompt coverage checks `EngineeringFlowInput`.
+- Codex milestone prompt coverage checks `npm run validate:example` and `npm run build`.
+- Attached context prompt coverage checks `eflow-context/v0.1` and nonzero attached context size.
+- Existing validation still checks 52 nodes, 93 edges, and 3 blocking questions.
+
+Validation results:
+
+- `npm run validate:example` passes.
+- `npm run build` passes.
+- `git diff --check` passes.
+
+Browser smoke check result:
+
+- Passed against `http://127.0.0.1:5173`.
+- Generated the Todo Thought Universe graph and confirmed 52 nodes / 93 edges.
+- Confirmed AI Collaboration Console renders above the main three-column workspace and pushes the grid down naturally.
+- Confirmed the console is not inside the right-side AI Interop panel, InspectorPanel, a modal, an overlay, a floating drawer, or a right drawer.
+- Confirmed API key, model, base URL, remember key, prompt mode, attach context, message composer, and action controls render and are usable.
+- Confirmed all six prompt modes appear in the prompt mode dropdown.
+- Confirmed context attachment shows the `eflow-context/v0.1` size estimate and external-provider warning.
+- Confirmed missing API key and invalid base URL errors are visible and do not mutate the graph.
+- Confirmed a mock CORS provider response appears in chat, can be copied, and can be cleared.
+- Confirmed graph counts stay unchanged after chat interactions.
+- Confirmed right-side AI Interop still contains Local Command Import and AI-Native Context Export.
+- Confirmed Local Command Import can insert an example command, validate it, and dry-run it without graph mutation.
+- Confirmed AI-Native Context Export copies `eflow-context/v0.1`.
+- Confirmed Workspace JSON export copies `eflow-workspace/v0.3`.
+- Confirmed AI Context JSON and Workspace JSON do not contain `eflow.aiChat.apiKey` or the fake smoke-test key.
+- Confirmed no browser console errors were reported.
+- Real external provider API call was not tested because no real API key was used.
+
+Known limitations:
+
+- Direct browser API may fail for providers that block CORS.
+- No backend/proxy.
+- No streaming.
+- No response parsing/apply.
+- No automatic eflow-command import.
+- No chat history persistence.
+- No audit events for chat.
+- No MCP/REST/CLI.
+- API key storage is local browser-only and personal-use oriented.
+
+Next recommended milestone:
+
+> Demand Compiler Schema Foundation

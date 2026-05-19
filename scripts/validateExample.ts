@@ -9,6 +9,10 @@ import {
   validateEFlowAuditLog,
 } from "../src/lib/auditLog";
 import {
+  AI_CHAT_PROMPT_MODES,
+  buildAIChatPrompt,
+} from "../src/lib/buildAIChatPrompt";
+import {
   applyEFlowCommandToGraph,
   dryRunEFlowCommandOnGraph,
 } from "../src/lib/applyEflowCommand";
@@ -432,6 +436,68 @@ assert.ok(
 assert.ok(
   eflowContext.commandInterface.graphCompatibility.unsupportedSchemaRelationshipTypes.includes("blocks"),
   "graphCompatibility should document unsupported schema relationship types",
+);
+
+assert.deepEqual(
+  AI_CHAT_PROMPT_MODES.map((mode) => mode.label),
+  [
+    "Free chat",
+    "Generate Codex milestone prompt",
+    "Convert Codex report to eflow-command",
+    "Raw idea to EngineeringFlowInput JSON",
+    "Progress / handoff summary",
+    "Strategic architecture consultation",
+  ],
+  "AI chat prompt modes should include the required collaboration modes",
+);
+const commandConversionPrompt = buildAIChatPrompt({
+  mode: "codex_report_to_command",
+  userMessage: "Codex completed implementation.",
+});
+assert.ok(
+  commandConversionPrompt.userPrompt.includes("eflow-command/v0.1"),
+  "command-conversion prompt should mention eflow-command/v0.1",
+);
+assert.ok(
+  commandConversionPrompt.userPrompt.includes("reviewStatus"),
+  "command-conversion prompt should mention reviewStatus",
+);
+assert.ok(
+  commandConversionPrompt.userPrompt.includes("lifecycleStatus"),
+  "command-conversion prompt should mention lifecycleStatus",
+);
+const rawIdeaPrompt = buildAIChatPrompt({
+  mode: "raw_idea_to_input",
+  userMessage: "A local planning tool.",
+});
+assert.ok(
+  rawIdeaPrompt.userPrompt.includes("EngineeringFlowInput"),
+  "raw idea prompt should mention EngineeringFlowInput",
+);
+const codexMilestonePrompt = buildAIChatPrompt({
+  mode: "codex_milestone_prompt",
+  userMessage: "Add the next safe milestone.",
+});
+assert.ok(
+  codexMilestonePrompt.userPrompt.includes("npm run validate:example"),
+  "Codex milestone prompt should require validate:example",
+);
+assert.ok(
+  codexMilestonePrompt.userPrompt.includes("npm run build"),
+  "Codex milestone prompt should require build",
+);
+const attachedContextPrompt = buildAIChatPrompt({
+  mode: "free_chat",
+  userMessage: "Summarize current graph.",
+  eflowContextJson: JSON.stringify(eflowContext, null, 2),
+});
+assert.ok(
+  attachedContextPrompt.userPrompt.includes("eflow-context/v0.1"),
+  "attached context block should mention eflow-context/v0.1",
+);
+assert.ok(
+  attachedContextPrompt.attachedContextSize > 0,
+  "attached context prompt should report context size",
 );
 
 assert.ok(isEFlowWorkspaceDocument(workspace), "workspace document should validate");
