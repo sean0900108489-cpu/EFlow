@@ -46,6 +46,9 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const [rememberKey, setRememberKey] = useState(storedApiKey.length > 0);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
+  const [previousResponseId, setPreviousResponseId] = useState("");
+  const [latestResponseId, setLatestResponseId] = useState("");
+  const [autoContinueWithLatestResponseId, setAutoContinueWithLatestResponseId] = useState(false);
   const [promptMode, setPromptMode] = useState<AIChatPromptMode>("free_chat");
   const [contextAttachmentMode, setContextAttachmentMode] =
     useState<AIChatContextAttachmentMode>("none");
@@ -118,6 +121,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     const trimmedApiKey = apiKey.trim();
     const trimmedModel = model.trim();
     const trimmedBaseUrl = baseUrl.trim();
+    const trimmedPreviousResponseId = previousResponseId.trim();
 
     if (!userContent) {
       setStatusMessage({ type: "error", text: t("aiChat.error.emptyMessage") });
@@ -183,9 +187,15 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
         baseUrl: trimmedBaseUrl,
         model: trimmedModel,
         input: requestInput,
+        previousResponseId: trimmedPreviousResponseId || undefined,
         t,
       });
       const assistantText = extractAssistantText(responsePayload, t);
+      const providerResponseId = extractProviderResponseId(responsePayload);
+      setLatestResponseId(providerResponseId ?? "");
+      if (autoContinueWithLatestResponseId && providerResponseId) {
+        setPreviousResponseId(providerResponseId);
+      }
       setChatMessages((currentMessages) => [
         ...currentMessages,
         {
@@ -219,6 +229,24 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
       ]);
     } finally {
       setIsSending(false);
+    }
+  }
+
+  async function copyLatestResponseId() {
+    if (!latestResponseId) return;
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error(t("aiChat.error.clipboardUnavailable"));
+      }
+
+      await navigator.clipboard.writeText(latestResponseId);
+      setStatusMessage({ type: "info", text: t("aiChat.status.responseIdCopied") });
+    } catch (error) {
+      setStatusMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : t("aiChat.error.copyResponseIdFailed"),
+      });
     }
   }
 
@@ -266,6 +294,11 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     setRememberKey(false);
     writeStoredApiKey("");
     setStatusMessage({ type: "info", text: t("aiChat.status.apiKeyCleared") });
+  }
+
+  function clearPreviousResponseId() {
+    setPreviousResponseId("");
+    setStatusMessage({ type: "info", text: t("aiChat.status.previousResponseIdCleared") });
   }
 
   return (
@@ -346,6 +379,54 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
               {t("aiChat.settings.helper.apiKey", { storageKey: API_KEY_STORAGE_KEY })}
             </p>
             <p>{t("aiChat.settings.helper.modelDraft")}</p>
+          </div>
+
+          <div className="ai-chat-thread-panel">
+            <div className="ai-chat-thread-panel-header">
+              <p className="eyebrow">{t("aiChat.thread.advancedLabel")}</p>
+              <span className="status-indicator status-warn">{t("aiChat.boundaries.draftOnly")}</span>
+            </div>
+            <div className="ai-chat-thread-grid">
+              <label className="field">
+                <span>{t("aiChat.thread.previousResponseIdLabel")}</span>
+                <input
+                  type="text"
+                  value={previousResponseId}
+                  onChange={(event) => setPreviousResponseId(event.target.value)}
+                  placeholder={t("aiChat.thread.previousResponseIdPlaceholder")}
+                  autoComplete="off"
+                />
+              </label>
+              <label className="check-field ai-chat-check-field">
+                <input
+                  type="checkbox"
+                  checked={autoContinueWithLatestResponseId}
+                  onChange={(event) => setAutoContinueWithLatestResponseId(event.target.checked)}
+                />
+                <span>{t("aiChat.thread.autoContinue")}</span>
+              </label>
+              <button
+                className="mini-button"
+                type="button"
+                onClick={clearPreviousResponseId}
+                disabled={!previousResponseId}
+              >
+                {t("aiChat.thread.clearPreviousResponseId")}
+              </button>
+            </div>
+            <div className="ai-chat-thread-copy">
+              <p>{t("aiChat.thread.helper")}</p>
+              <p className="ai-chat-warning">{t("aiChat.thread.warning")}</p>
+            </div>
+            {latestResponseId ? (
+              <div className="ai-chat-latest-response-id">
+                <span>{t("aiChat.thread.latestResponseId")}</span>
+                <code>{latestResponseId}</code>
+                <button className="mini-button" type="button" onClick={() => void copyLatestResponseId()}>
+                  {t("aiChat.thread.copyResponseId")}
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="ai-chat-prompt-grid">
@@ -524,15 +605,22 @@ async function postDirectProviderRequest({
   baseUrl,
   model,
   input,
+  previousResponseId,
   t,
 }: {
   apiKey: string;
   baseUrl: string;
   model: string;
   input: ProviderInputMessage[];
+  previousResponseId?: string;
   t: Translate;
 }): Promise<unknown> {
   let response: Response;
+  const requestBody = {
+    model,
+    input,
+    ...(previousResponseId ? { previous_response_id: previousResponseId } : {}),
+  };
 
   try {
     response = await fetch(baseUrl, {
@@ -541,10 +629,7 @@ async function postDirectProviderRequest({
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model,
-        input,
-      }),
+      body: JSON.stringify(requestBody),
     });
   } catch (error) {
     if (error instanceof TypeError) {
@@ -562,6 +647,11 @@ async function postDirectProviderRequest({
   }
 
   return responsePayload;
+}
+
+function extractProviderResponseId(payload: unknown): string | null {
+  if (!isRecord(payload)) return null;
+  return typeof payload.id === "string" && payload.id.trim() ? payload.id : null;
 }
 
 function extractAssistantText(payload: unknown, t: Translate): string {
