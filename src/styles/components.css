@@ -3648,3 +3648,903 @@
     width: 100%;
   }
 }
+
+/* City OS Interface Redesign */
+.eyebrow {
+  color: rgba(113, 242, 255, 0.82);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+}
+
+.button,
+.mini-button,
+.danger-button,
+.icon-button,
+.filter-chip,
+.collapsible-section-header {
+  position: relative;
+  isolation: isolate;
+}
+
+.button,
+.mini-button,
+.danger-button,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+
+.button-primary {
+  color: #fffaf7;
+  border-color: rgba(255, 180, 143, 0.54);
+  background:
+    linear-gradient(135deg, #ff7a3d 0%, var(--city-orange) 44%, #bd2c25 100%);
+  box-shadow: var(--city-glow-orange);
+}
+
+.button-primary:hover {
+  border-color: rgba(255, 218, 199, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 90, 47, 0.24),
+    0 18px 50px rgba(255, 90, 47, 0.3);
+}
+
+.button-secondary,
+.mini-button,
+.icon-button {
+  color: var(--city-text);
+  border-color: rgba(113, 242, 255, 0.3);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.035)),
+    rgba(7, 27, 38, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11);
+}
+
+.button-secondary:hover,
+.mini-button:hover,
+.icon-button:hover {
+  border-color: rgba(113, 242, 255, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(113, 242, 255, 0.1),
+    0 12px 30px rgba(30, 182, 200, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.danger-button {
+  color: #ffe9e7;
+  border-color: rgba(255, 106, 99, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 106, 99, 0.2), rgba(255, 106, 99, 0.08)),
+    rgba(33, 11, 14, 0.78);
+  box-shadow: 0 10px 24px rgba(255, 106, 99, 0.12);
+}
+
+.danger-button:hover {
+  border-color: rgba(255, 132, 122, 0.68);
+}
+
+.status-indicator,
+.graph-counts,
+.collapsible-section-meta,
+.audit-log-total-pill,
+.manual-context-total-pill,
+.lifecycle-total-pill,
+.review-progress-heading strong {
+  border: 1px solid rgba(113, 242, 255, 0.2);
+  color: rgba(218, 247, 250, 0.9);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+    rgba(5, 23, 31, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.status-ok {
+  color: var(--city-green);
+  border-color: rgba(85, 231, 173, 0.28);
+  background:
+    linear-gradient(180deg, rgba(85, 231, 173, 0.16), rgba(85, 231, 173, 0.06)),
+    rgba(4, 24, 20, 0.78);
+}
+
+.status-warn {
+  color: var(--city-amber);
+  border-color: rgba(255, 178, 76, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 178, 76, 0.16), rgba(255, 178, 76, 0.06)),
+    rgba(31, 21, 7, 0.78);
+}
+
+.regen-confirm,
+.dirty-note,
+.manual-edge-helper,
+.command-note,
+.review-selection-note,
+.ai-chat-warning {
+  border-color: rgba(255, 178, 76, 0.27);
+  color: #ffd9a0;
+  background:
+    linear-gradient(90deg, rgba(255, 90, 47, 0.13), rgba(255, 178, 76, 0.08)),
+    rgba(30, 18, 8, 0.76);
+}
+
+.regen-confirm p {
+  color: #ffe2b9;
+}
+
+.collapsible-section {
+  border-color: rgba(164, 236, 244, 0.24);
+  border-radius: var(--city-radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    rgba(6, 23, 32, 0.68);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 12px 32px rgba(0, 0, 0, 0.16);
+}
+
+.collapsible-section.is-open {
+  border-color: rgba(113, 242, 255, 0.36);
+}
+
+.collapsible-section-header {
+  color: var(--city-text);
+  background:
+    linear-gradient(90deg, rgba(113, 242, 255, 0.08), transparent 58%, rgba(255, 90, 47, 0.055)),
+    rgba(7, 27, 38, 0.78);
+}
+
+.collapsible-section-header:hover {
+  background:
+    linear-gradient(90deg, rgba(113, 242, 255, 0.13), transparent 58%, rgba(255, 90, 47, 0.075)),
+    rgba(8, 31, 42, 0.9);
+}
+
+.collapsible-section-header:focus-visible {
+  outline: 3px solid rgba(113, 242, 255, 0.2);
+  outline-offset: -3px;
+}
+
+.collapsible-section-title {
+  color: var(--city-text);
+  font-size: 0.84rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.collapsible-section-subtitle {
+  color: var(--city-text-soft);
+}
+
+.collapsible-section-toggle {
+  border-color: rgba(113, 242, 255, 0.26);
+  color: var(--city-cyan);
+  background: rgba(3, 14, 20, 0.72);
+}
+
+.collapsible-section.is-open .collapsible-section-toggle {
+  border-color: rgba(255, 90, 47, 0.45);
+  color: #ffd8ca;
+  background: rgba(255, 90, 47, 0.12);
+}
+
+.collapsible-section-body {
+  border-top-color: rgba(164, 236, 244, 0.18);
+  background:
+    linear-gradient(180deg, rgba(113, 242, 255, 0.035), transparent 38%),
+    rgba(3, 14, 20, 0.2);
+}
+
+.editor-section,
+.inspector-section,
+.summary-panel,
+.export-panel,
+.workspace-persistence-panel,
+.local-command-panel,
+.manual-context-summary,
+.audit-log-panel,
+.manual-node-panel,
+.manual-edge-panel,
+.eflow-context-panel,
+.review-panel-compact,
+.lifecycle-summary {
+  border-top-color: rgba(164, 236, 244, 0.16);
+}
+
+.panel-heading h2,
+.canvas-heading h2,
+.summary-panel h2,
+.review-progress-heading h2,
+.ai-chat-title-block h2 {
+  color: var(--city-text);
+  font-size: 1rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.section-header h3,
+.command-list h3,
+.advanced-fields summary,
+.manual-context-status-group > span,
+.field span,
+.field-row label,
+.check-field span {
+  color: rgba(218, 247, 250, 0.88);
+}
+
+.section-header p,
+.muted-small,
+.workspace-helper,
+.command-helper,
+.command-note,
+.command-interop-note,
+.context-command-schema,
+.context-interop-note,
+.context-empty-note,
+.audit-log-empty,
+.manual-context-empty,
+.review-empty,
+.ai-chat-title-block p:not(.eyebrow),
+.ai-chat-safety-copy p,
+.ai-chat-mode-note,
+.ai-chat-context-meter,
+.ai-chat-status {
+  color: var(--city-text-muted);
+}
+
+.editable-card,
+.review-item-card,
+.audit-log-event,
+.command-issue,
+.command-change,
+.advanced-fields,
+.summary-grid span,
+.check-field,
+.ai-chat-safety-copy,
+.ai-chat-context-meter,
+.ai-chat-mode-note,
+.ai-chat-message {
+  border-color: rgba(164, 236, 244, 0.18);
+  border-radius: var(--city-radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(5, 22, 31, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.editable-card:hover,
+.review-item-card:hover,
+.audit-log-event:hover {
+  border-color: rgba(113, 242, 255, 0.3);
+}
+
+.card-header span,
+.readonly-row span,
+.command-issue span,
+.command-change span {
+  color: rgba(146, 181, 191, 0.92);
+}
+
+.readonly-row code,
+.command-issue strong,
+.command-change strong,
+.command-interop-note strong,
+.context-command-schema strong,
+.context-interop-note strong,
+.ai-chat-safety-copy code {
+  color: var(--city-text);
+}
+
+.readonly-row code,
+.audit-log-meta-row span,
+.command-issue span,
+.command-change span {
+  color: rgba(189, 230, 235, 0.88);
+}
+
+.check-field input {
+  accent-color: var(--city-orange);
+}
+
+.provenance-badge,
+.manual-context-chip-row span,
+.review-manual-pill,
+.review-kind-pill,
+.command-result-summary span,
+.audit-log-event-topline time,
+.audit-log-event-topline span,
+.audit-log-meta-row span,
+.review-progress-stats span,
+.review-meta-row span,
+.ai-chat-message-meta span,
+.ai-chat-message-meta time {
+  border: 1px solid rgba(113, 242, 255, 0.18);
+  color: rgba(218, 247, 250, 0.92);
+  background: rgba(7, 29, 39, 0.78);
+}
+
+.canvas-empty-state {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(164, 236, 244, 0.22);
+  border-radius: var(--city-radius-lg);
+  background:
+    linear-gradient(90deg, transparent 0 49%, rgba(113, 242, 255, 0.16) 49.2%, transparent 49.5%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(180deg, rgba(113, 242, 255, 0.045) 0 1px, transparent 1px 44px),
+    rgba(3, 16, 24, 0.42);
+}
+
+.canvas-empty-state h2 {
+  color: var(--city-text);
+  font-size: 1.75rem;
+}
+
+.canvas-empty-state p:last-child {
+  color: var(--city-text-muted);
+}
+
+.canvas-frame {
+  gap: 13px;
+}
+
+.canvas-heading {
+  position: relative;
+  padding: 8px 8px 0;
+}
+
+.canvas-heading::after {
+  position: absolute;
+  right: 8px;
+  bottom: -7px;
+  left: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(113, 242, 255, 0.52), transparent 48%, rgba(255, 90, 47, 0.42));
+  content: "";
+}
+
+.graph-counts {
+  color: rgba(231, 252, 255, 0.94);
+  font-size: 0.78rem;
+}
+
+.canvas-filter-stack {
+  gap: 9px;
+  padding: 2px 8px 0;
+}
+
+.canvas-filter-label {
+  flex-basis: 76px;
+  color: rgba(113, 242, 255, 0.66);
+  letter-spacing: 0.11em;
+}
+
+.filter-chip {
+  border-color: rgba(164, 236, 244, 0.22);
+  color: rgba(218, 247, 250, 0.9);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025)),
+    rgba(5, 22, 31, 0.72);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.filter-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(113, 242, 255, 0.52);
+  box-shadow: 0 10px 28px rgba(21, 176, 196, 0.12);
+}
+
+.filter-chip.is-active {
+  color: #fff9f6;
+  border-color: rgba(255, 134, 85, 0.64);
+  background:
+    linear-gradient(135deg, rgba(255, 122, 61, 0.94), rgba(255, 90, 47, 0.78)),
+    rgba(19, 38, 45, 0.9);
+  box-shadow: var(--city-glow-orange);
+}
+
+.filter-chip-count {
+  color: rgba(218, 247, 250, 0.86);
+  background: rgba(3, 14, 20, 0.62);
+}
+
+.filter-chip.is-active .filter-chip-count {
+  color: #fff;
+  background: rgba(3, 14, 20, 0.3);
+}
+
+.react-flow-shell {
+  position: relative;
+  border-color: rgba(164, 236, 244, 0.34);
+  border-radius: var(--city-radius-lg);
+  background:
+    linear-gradient(90deg, rgba(113, 242, 255, 0.07), transparent 18% 82%, rgba(255, 90, 47, 0.045)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(180deg, rgba(113, 242, 255, 0.04) 0 1px, transparent 1px 56px),
+    #07141d;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.react-flow-shell::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent 0 7%, rgba(113, 242, 255, 0.15) 7.1%, transparent 7.3% 92%, rgba(255, 90, 47, 0.14) 92.1%, transparent 92.3%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 18% 82%, rgba(0, 0, 0, 0.12));
+  content: "";
+}
+
+.react-flow {
+  background: transparent;
+}
+
+.react-flow__pane {
+  cursor: grab;
+}
+
+.react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.react-flow__background path,
+.react-flow__background circle {
+  stroke: rgba(113, 242, 255, 0.18) !important;
+  fill: rgba(113, 242, 255, 0.18) !important;
+}
+
+.react-flow__edge-path {
+  stroke: rgba(113, 242, 255, 0.58);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 5px rgba(113, 242, 255, 0.15));
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path {
+  stroke: var(--city-orange);
+  filter: drop-shadow(0 0 7px rgba(255, 90, 47, 0.42));
+}
+
+.react-flow__edge-text {
+  fill: rgba(238, 252, 255, 0.96);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.react-flow__edge-textbg {
+  fill: rgba(4, 15, 22, 0.92);
+  stroke: rgba(113, 242, 255, 0.24);
+  stroke-width: 1;
+}
+
+.react-flow__controls {
+  overflow: hidden;
+  border: 1px solid rgba(164, 236, 244, 0.3);
+  border-radius: var(--city-radius-md);
+  background: rgba(5, 20, 29, 0.9);
+  box-shadow: var(--city-shadow-soft);
+}
+
+.react-flow__controls-button {
+  border-bottom-color: rgba(164, 236, 244, 0.18);
+  color: var(--city-text);
+  background: transparent;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(113, 242, 255, 0.13);
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.engineering-node-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(164, 236, 244, 0.42);
+  border-radius: var(--city-radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04)),
+    rgba(6, 27, 37, 0.9);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(113, 242, 255, 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.engineering-node-card::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(113, 242, 255, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 28%),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgba(255, 255, 255, 0.045) 39px, transparent 40px);
+  content: "";
+}
+
+.engineering-node-card > * {
+  position: relative;
+}
+
+.engineering-node-card.is-selected {
+  border-color: rgba(255, 90, 47, 0.82);
+  box-shadow:
+    0 0 0 4px rgba(255, 90, 47, 0.13),
+    0 20px 50px rgba(255, 90, 47, 0.2),
+    0 18px 42px rgba(0, 0, 0, 0.34);
+}
+
+.engineering-node-card h3 {
+  color: var(--city-text);
+  font-size: 0.93rem;
+  font-weight: 850;
+}
+
+.engineering-node-card p {
+  color: rgba(193, 224, 230, 0.9);
+  font-size: 0.77rem;
+}
+
+.type-badge,
+.status-pill,
+.lifecycle-node-badge,
+.review-priority-pill,
+.review-kind-pill {
+  border: 1px solid rgba(164, 236, 244, 0.18);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.type-badge {
+  color: #dffbff;
+  background: rgba(113, 242, 255, 0.12);
+}
+
+.type-user,
+.type-ai_task {
+  color: #ffe2a9;
+  background: rgba(255, 178, 76, 0.13);
+  border-color: rgba(255, 178, 76, 0.22);
+}
+
+.type-feature,
+.type-flow_step {
+  color: #dbfbff;
+  background: rgba(113, 242, 255, 0.14);
+}
+
+.type-data_object {
+  color: #d9fff0;
+  background: rgba(85, 231, 173, 0.13);
+  border-color: rgba(85, 231, 173, 0.22);
+}
+
+.type-question {
+  color: #ffd9c5;
+  background: rgba(255, 90, 47, 0.13);
+  border-color: rgba(255, 90, 47, 0.24);
+}
+
+.status-pill {
+  color: rgba(218, 247, 250, 0.92);
+  background: rgba(105, 128, 139, 0.18);
+}
+
+.status-confirmed,
+.lifecycle-node-badge-completed {
+  color: var(--city-green);
+  background: rgba(85, 231, 173, 0.13);
+  border-color: rgba(85, 231, 173, 0.25);
+}
+
+.status-needs_review,
+.lifecycle-node-badge-needs_refactor {
+  color: var(--city-amber);
+  background: rgba(255, 178, 76, 0.13);
+  border-color: rgba(255, 178, 76, 0.26);
+}
+
+.status-rejected,
+.lifecycle-node-badge-blocked,
+.lifecycle-node-badge-deprecated {
+  color: var(--city-red);
+  background: rgba(255, 106, 99, 0.13);
+  border-color: rgba(255, 106, 99, 0.26);
+}
+
+.lifecycle-node-badge {
+  color: rgba(218, 247, 250, 0.92);
+  background: rgba(105, 128, 139, 0.16);
+}
+
+.lifecycle-node-badge-draft,
+.lifecycle-node-badge-planned,
+.lifecycle-node-badge-ready {
+  color: rgba(194, 235, 241, 0.92);
+  background: rgba(113, 242, 255, 0.1);
+  border-color: rgba(113, 242, 255, 0.18);
+}
+
+.lifecycle-node-badge-developing {
+  color: #ffd1bd;
+  background: rgba(255, 90, 47, 0.14);
+  border-color: rgba(255, 90, 47, 0.28);
+}
+
+.node-handle {
+  width: 9px;
+  height: 9px;
+  border: 2px solid rgba(4, 17, 24, 0.96);
+  background: var(--city-cyan);
+  box-shadow: 0 0 12px rgba(113, 242, 255, 0.46);
+}
+
+.flow-edge-confirmed path {
+  stroke: rgba(85, 231, 173, 0.82);
+}
+
+.flow-edge-rejected path {
+  stroke: rgba(255, 106, 99, 0.82);
+}
+
+.summary-panel p:not(.eyebrow),
+.review-subtitle,
+.review-reason,
+.command-issue p,
+.command-change p,
+.audit-log-event p,
+.ai-chat-empty-state p,
+.ai-chat-message p {
+  color: var(--city-text-muted);
+}
+
+.summary-grid {
+  gap: 9px;
+}
+
+.summary-grid span {
+  position: relative;
+  overflow: hidden;
+  color: var(--city-text-muted);
+}
+
+.summary-grid span::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--city-cyan), rgba(255, 90, 47, 0.8));
+  content: "";
+}
+
+.summary-grid strong,
+.lifecycle-count-value {
+  color: var(--city-text);
+}
+
+.lifecycle-count-grid {
+  border-color: rgba(164, 236, 244, 0.2);
+  border-radius: var(--city-radius-md);
+  background: rgba(5, 22, 31, 0.62);
+}
+
+.lifecycle-count-grid > span,
+.lifecycle-count-row > span,
+.lifecycle-count-row > strong {
+  border-bottom-color: rgba(164, 236, 244, 0.16);
+  color: var(--city-text-muted);
+}
+
+.lifecycle-count-grid > span:not(:nth-child(3n)),
+.lifecycle-count-row > span,
+.lifecycle-count-row > strong:first-of-type {
+  border-right-color: rgba(164, 236, 244, 0.16);
+}
+
+.lifecycle-count-heading {
+  color: rgba(218, 247, 250, 0.9);
+  background: rgba(113, 242, 255, 0.08);
+}
+
+.command-textarea,
+.fallback-textarea,
+.workspace-import-box textarea,
+.import-section textarea,
+.ai-chat-composer textarea {
+  color: rgba(238, 252, 255, 0.96);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+    rgba(2, 10, 15, 0.88);
+  border-color: rgba(113, 242, 255, 0.22);
+}
+
+.command-textarea::placeholder,
+.fallback-textarea::placeholder,
+.workspace-import-box textarea::placeholder,
+.import-section textarea::placeholder,
+.ai-chat-composer textarea::placeholder {
+  color: rgba(238, 252, 255, 0.5);
+}
+
+.command-textarea:focus,
+.fallback-textarea:focus,
+.workspace-import-box textarea:focus,
+.import-section textarea:focus,
+.ai-chat-composer textarea:focus {
+  border-color: rgba(113, 242, 255, 0.72);
+  background:
+    linear-gradient(180deg, rgba(113, 242, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(3, 14, 20, 0.94);
+}
+
+.command-interop-note,
+.context-interop-note,
+.ai-chat-safety-copy,
+.ai-chat-mode-note {
+  border-color: rgba(113, 242, 255, 0.2);
+  background:
+    linear-gradient(90deg, rgba(113, 242, 255, 0.12), transparent),
+    rgba(5, 22, 31, 0.7);
+}
+
+.import-success,
+.command-message-success,
+.manual-node-message-success,
+.manual-edge-message-success {
+  color: var(--city-green);
+  background: rgba(85, 231, 173, 0.12);
+  border: 1px solid rgba(85, 231, 173, 0.23);
+}
+
+.import-error,
+.command-message-error,
+.manual-node-message-error,
+.manual-edge-message-error,
+.command-issue-error {
+  color: #ffc4bf;
+  background: rgba(255, 106, 99, 0.12);
+  border: 1px solid rgba(255, 106, 99, 0.25);
+}
+
+.command-message-info,
+.ai-chat-status-info {
+  color: var(--city-cyan);
+  background: rgba(113, 242, 255, 0.12);
+  border: 1px solid rgba(113, 242, 255, 0.22);
+}
+
+.ai-chat-status-error,
+.ai-chat-message-error p {
+  color: #ffc4bf;
+}
+
+.review-progress-bar {
+  background: rgba(113, 242, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(113, 242, 255, 0.11);
+}
+
+.review-progress-bar span {
+  background: linear-gradient(90deg, var(--city-orange), var(--city-cyan), var(--city-green));
+  box-shadow: 0 0 16px rgba(113, 242, 255, 0.24);
+}
+
+.review-item-card.is-selected {
+  border-color: rgba(255, 90, 47, 0.62);
+  box-shadow:
+    0 0 0 3px rgba(255, 90, 47, 0.12),
+    0 14px 34px rgba(0, 0, 0, 0.2);
+}
+
+.review-item-card h3,
+.ai-chat-empty-state h3 {
+  color: var(--city-text);
+}
+
+.priority-critical {
+  color: var(--city-red);
+  background: rgba(255, 106, 99, 0.13);
+  border-color: rgba(255, 106, 99, 0.25);
+}
+
+.priority-high {
+  color: var(--city-amber);
+  background: rgba(255, 178, 76, 0.13);
+  border-color: rgba(255, 178, 76, 0.25);
+}
+
+.priority-normal {
+  color: var(--city-cyan);
+  background: rgba(113, 242, 255, 0.12);
+  border-color: rgba(113, 242, 255, 0.22);
+}
+
+.ai-chat-console {
+  border-color: rgba(164, 236, 244, 0.3);
+  border-radius: var(--city-radius-xl);
+  background:
+    linear-gradient(90deg, rgba(255, 90, 47, 0.09), transparent 20% 82%, rgba(113, 242, 255, 0.08)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+    rgba(7, 27, 38, 0.8);
+  box-shadow: var(--city-glow-cyan), var(--city-shadow-soft);
+}
+
+.ai-chat-console::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 34%),
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(255, 255, 255, 0.03) 35px, transparent 36px);
+}
+
+.ai-chat-title-block h2 {
+  color: var(--city-text);
+  font-size: 1.18rem;
+}
+
+.ai-chat-message-list {
+  border-color: rgba(164, 236, 244, 0.24);
+  background:
+    linear-gradient(90deg, transparent 0 49%, rgba(113, 242, 255, 0.12) 49.2%, transparent 49.5%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 54px),
+    repeating-linear-gradient(180deg, rgba(113, 242, 255, 0.035) 0 1px, transparent 1px 54px),
+    rgba(3, 16, 24, 0.54);
+}
+
+.ai-chat-message-user {
+  border-color: rgba(255, 90, 47, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 90, 47, 0.18), rgba(255, 90, 47, 0.08)),
+    rgba(38, 16, 11, 0.78);
+}
+
+.ai-chat-message-user .ai-chat-message-meta span,
+.ai-chat-message-user .ai-chat-message-meta time,
+.ai-chat-message-user p {
+  color: #fff1ea;
+}
+
+.ai-chat-message-error {
+  border-color: rgba(255, 106, 99, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 106, 99, 0.16), rgba(255, 106, 99, 0.06)),
+    rgba(33, 11, 14, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .canvas-filter-group {
+    display: grid;
+    gap: 6px;
+  }
+
+  .canvas-filter-label {
+    flex-basis: auto;
+    padding-top: 0;
+  }
+
+  .canvas-empty-state h2 {
+    font-size: 1.45rem;
+  }
+}
