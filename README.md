@@ -172,11 +172,11 @@ EFlow 使用 local browser persistence 和 explicit JSON workspace files。
 
 ## Tutorial And Language UI
 
-EFlow 包含 lightweight tutorial mode 與 owner workflow tutorial：
+EFlow 包含 lightweight tutorial mode 與 visual owner workflow playbook：
 
 - `/` runs the normal app。
 - `/?tour=1` runs the normal app with tutorial annotations enabled。
-- `/tutorial` opens a standalone owner workflow guide inside the Vite SPA, covering Intake -> Generate -> Review Gate -> Milestone -> Handoff -> Sync Back。
+- `/tutorial` opens a standalone visual owner playbook inside the Vite SPA, covering Intake -> Generate -> Review Gate -> Milestone -> Handoff -> Sync Back with CSS-only mini demos。
 
 UI language foundation 支援 `zh-TW` and `en`。Language preference 只存在 browser `localStorage` 的 `eflow.ui.locale`，不會寫進 workspace 或 graph schema。
 
