@@ -6,6 +6,7 @@ import type {
 } from "../../types/engineeringFlow";
 import type { EFlowAuditEvent } from "../../types/eflowAudit";
 import { buildGraphTrustSummary } from "../../lib/trustSummary";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { JsonExportPanel } from "../export/JsonExportPanel";
 
 type EmptyInspectorProps = {
@@ -35,51 +36,52 @@ export function EmptyInspector({
   onImportInput,
   onClearLocalWorkspace,
 }: EmptyInspectorProps) {
+  const { t } = useLanguage();
   const trustSummary = graph ? buildGraphTrustSummary(graph) : null;
 
   return (
     <div className="empty-inspector">
       <section className="summary-panel">
-        <p className="eyebrow">Project summary</p>
+        <p className="eyebrow">{t("inspector.empty.eyebrow")}</p>
         <h2>{input.projectName}</h2>
-        <p>{input.projectIntent || "No intent has been written yet."}</p>
+        <p>{input.projectIntent || t("inspector.empty.noIntent")}</p>
         {trustSummary ? (
           <div className="summary-grid">
             <span>
               <strong>{trustSummary.totalNodes}</strong>
-              Total nodes
+              {t("inspector.empty.totalNodes")}
             </span>
             <span>
               <strong>{trustSummary.confirmedNodes}</strong>
-              Confirmed nodes
+              {t("inspector.empty.confirmedNodes")}
             </span>
             <span>
               <strong>{trustSummary.suggestedNodes}</strong>
-              Suggested nodes
+              {t("inspector.empty.suggestedNodes")}
             </span>
             <span>
               <strong>{trustSummary.needsReviewNodes}</strong>
-              Needs review nodes
+              {t("inspector.empty.needsReviewNodes")}
             </span>
             <span>
               <strong>{trustSummary.totalEdges}</strong>
-              Total edges
+              {t("inspector.empty.totalEdges")}
             </span>
             <span>
               <strong>{trustSummary.confirmedEdges}</strong>
-              Confirmed edges
+              {t("inspector.empty.confirmedEdges")}
             </span>
             <span>
               <strong>{trustSummary.suggestedEdges}</strong>
-              Suggested edges
+              {t("inspector.empty.suggestedEdges")}
             </span>
             <span>
               <strong>{trustSummary.rejectedEdges}</strong>
-              Rejected edges
+              {t("inspector.empty.rejectedEdges")}
             </span>
             <span>
               <strong>{trustSummary.blockingQuestions}</strong>
-              Blocking questions
+              {t("inspector.empty.blockingQuestions")}
             </span>
           </div>
         ) : null}

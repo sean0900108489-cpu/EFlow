@@ -9,6 +9,7 @@ import type {
   EngineeringFlowGraph,
   EngineeringNode,
 } from "../../types/engineeringFlow";
+import { useLanguage } from "../../lib/i18n/language-context";
 import { ReviewItemCard } from "./ReviewItemCard";
 import { ReviewProgress } from "./ReviewProgress";
 import { ReviewQueueFilters, type ReviewQueueFilter } from "./ReviewQueueFilters";
@@ -34,6 +35,7 @@ export function ReviewPanel({
   onUpdateNode,
   onUpdateEdge,
 }: ReviewPanelProps) {
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<ReviewQueueFilter>("needs_action");
   const queue = useMemo(() => buildReviewQueue(graph), [graph]);
   const selectedReviewItemId = selectedNodeId
@@ -100,17 +102,17 @@ export function ReviewPanel({
       <div className="review-toolbar">
         <ReviewQueueFilters activeFilter={activeFilter} onChange={setActiveFilter} />
         <button className="button button-secondary" type="button" onClick={selectNextUnreviewed}>
-          Next unreviewed
+          {t("review.panel.nextUnreviewed")}
         </button>
       </div>
       {selectedReviewItemId ? (
         <p className="review-selection-note">
-          Selected item may be hidden by the current canvas filter.
+          {t("review.panel.selectionHidden")}
         </p>
       ) : null}
       <div className="review-list">
         {visibleItems.length === 0 ? (
-          <p className="review-empty">No review items match this filter.</p>
+          <p className="review-empty">{t("review.panel.empty")}</p>
         ) : (
           visibleItems.map((item) => (
             <ReviewItemCard
@@ -126,7 +128,9 @@ export function ReviewPanel({
         )}
       </div>
       {compact && filteredItems.length > visibleItems.length ? (
-        <p className="review-empty">{filteredItems.length - visibleItems.length} more items in this filter.</p>
+        <p className="review-empty">
+          {t("review.panel.moreItems", { count: filteredItems.length - visibleItems.length })}
+        </p>
       ) : null}
     </section>
   );

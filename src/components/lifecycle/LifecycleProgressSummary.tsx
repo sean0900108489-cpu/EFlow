@@ -2,23 +2,15 @@ import { useMemo } from "react";
 import { buildLifecycleSummary } from "../../lib/buildLifecycleSummary";
 import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../../types/eflowCommand";
 import type { EngineeringFlowGraph } from "../../types/engineeringFlow";
+import { lifecycleStatusLabelKeys } from "../../lib/i18n/display-labels";
+import { useLanguage } from "../../lib/i18n/language-context";
 
 type LifecycleProgressSummaryProps = {
   graph: EngineeringFlowGraph;
 };
 
-const lifecycleLabels: Record<LifecycleStatus, string> = {
-  draft: "Draft",
-  planned: "Planned",
-  ready: "Ready",
-  developing: "Developing",
-  completed: "Completed",
-  blocked: "Blocked",
-  needs_refactor: "Needs refactor",
-  deprecated: "Deprecated",
-};
-
 export function LifecycleProgressSummary({ graph }: LifecycleProgressSummaryProps) {
+  const { t } = useLanguage();
   const summary = useMemo(() => buildLifecycleSummary(graph), [graph]);
   const visibleStatuses = LIFECYCLE_STATUSES.filter(
     (status) =>
@@ -31,20 +23,23 @@ export function LifecycleProgressSummary({ graph }: LifecycleProgressSummaryProp
     <section className="lifecycle-summary">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Lifecycle summary</p>
-          <h2>Implementation Progress</h2>
+          <p className="eyebrow">{t("lifecycle.summary.eyebrow")}</p>
+          <h2>{t("lifecycle.summary.title")}</h2>
         </div>
         <strong className="lifecycle-total-pill">
-          {graph.nodes.length} nodes / {graph.edges.length} edges
+          {t("lifecycle.summary.total", {
+            nodes: graph.nodes.length,
+            edges: graph.edges.length,
+          })}
         </strong>
       </div>
-      <div className="lifecycle-count-grid" aria-label="Implementation lifecycle counts">
-        <span className="lifecycle-count-heading">Lifecycle</span>
-        <span className="lifecycle-count-heading lifecycle-count-value">Nodes</span>
-        <span className="lifecycle-count-heading lifecycle-count-value">Edges</span>
+      <div className="lifecycle-count-grid" aria-label={t("lifecycle.summary.ariaLabel")}>
+        <span className="lifecycle-count-heading">{t("lifecycle.summary.lifecycle")}</span>
+        <span className="lifecycle-count-heading lifecycle-count-value">{t("lifecycle.summary.nodes")}</span>
+        <span className="lifecycle-count-heading lifecycle-count-value">{t("lifecycle.summary.edges")}</span>
         {visibleStatuses.map((status) => (
           <div className="lifecycle-count-row" key={status}>
-            <span className="lifecycle-status-label">{lifecycleLabels[status]}</span>
+            <span className="lifecycle-status-label">{t(lifecycleStatusLabelKeys[status])}</span>
             <strong className="lifecycle-count-value">{summary.nodeCounts[status]}</strong>
             <strong className="lifecycle-count-value">{summary.edgeCounts[status]}</strong>
           </div>

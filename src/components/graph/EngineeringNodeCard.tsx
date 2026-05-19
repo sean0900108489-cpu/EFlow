@@ -1,19 +1,14 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { EngineeringReactNode } from "../../lib/graphAdapters";
-import type { LifecycleStatus } from "../../types/eflowCommand";
-
-const lifecycleStatusLabels: Record<LifecycleStatus, string> = {
-  draft: "Draft",
-  planned: "Planned",
-  ready: "Ready",
-  developing: "Developing",
-  completed: "Completed",
-  blocked: "Blocked",
-  needs_refactor: "Needs refactor",
-  deprecated: "Deprecated",
-};
+import {
+  lifecycleStatusLabelKeys,
+  nodeTypeLabelKeys,
+  reviewStatusLabelKeys,
+} from "../../lib/i18n/display-labels";
+import { useLanguage } from "../../lib/i18n/language-context";
 
 export function EngineeringNodeCard({ data, selected }: NodeProps<EngineeringReactNode>) {
+  const { t } = useLanguage();
   const node = data.node;
   const displayedLifecycleStatus = node.lifecycleStatus ?? "planned";
   const shortDescription =
@@ -27,8 +22,8 @@ export function EngineeringNodeCard({ data, selected }: NodeProps<EngineeringRea
     >
       <Handle className="node-handle" type="target" position={Position.Left} />
       <div className="node-card-topline">
-        <span className={`type-badge type-${node.type}`}>{node.type}</span>
-        <span className={`status-pill status-${node.status}`}>{node.status}</span>
+        <span className={`type-badge type-${node.type}`}>{t(nodeTypeLabelKeys[node.type])}</span>
+        <span className={`status-pill status-${node.status}`}>{t(reviewStatusLabelKeys[node.status])}</span>
       </div>
       <div className="node-card-lifecycle-row">
         <span
@@ -36,7 +31,7 @@ export function EngineeringNodeCard({ data, selected }: NodeProps<EngineeringRea
           data-lifecycle-status={displayedLifecycleStatus}
         >
           <span className="lifecycle-node-dot" aria-hidden="true" />
-          {lifecycleStatusLabels[displayedLifecycleStatus]}
+          {t(lifecycleStatusLabelKeys[displayedLifecycleStatus])}
         </span>
       </div>
       <h3>{node.title}</h3>

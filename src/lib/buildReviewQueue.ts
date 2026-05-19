@@ -1,4 +1,13 @@
-import type { EngineeringEdge, EngineeringFlowGraph, EngineeringNode } from "../types/engineeringFlow";
+import type {
+  EngineeringEdge,
+  EdgeStatus,
+  EngineeringFlowGraph,
+  EngineeringNode,
+  EngineeringNodeType,
+  NodeStatus,
+  RelationshipType,
+} from "../types/engineeringFlow";
+import type { TranslationKey, TranslationValues } from "./i18n/types";
 import { isBlockingQuestionNode } from "./trustSummary";
 
 export type ReviewItemKind = "node" | "edge";
@@ -11,9 +20,13 @@ export type ReviewItem = {
   graphItemId: string;
   title: string;
   subtitle: string;
-  status: string;
+  nodeType?: EngineeringNodeType;
+  relationshipType?: RelationshipType;
+  status: NodeStatus | EdgeStatus;
   priority: ReviewPriority;
   reason: string;
+  reasonKey?: TranslationKey;
+  reasonValues?: TranslationValues;
   confidence: number;
   sourceType?: string;
 };
@@ -72,9 +85,11 @@ function buildNodeReviewItem(node: EngineeringNode): ReviewItem {
     graphItemId: node.id,
     title: node.title,
     subtitle: `${node.type} · ${node.status}`,
+    nodeType: node.type,
     status: node.status,
     priority: getNodePriority(node),
     reason: getNodeReason(node),
+    reasonKey: getNodeReasonKey(node),
     confidence: node.confidence,
     sourceType: node.provenance.sourceType,
   };
@@ -93,9 +108,11 @@ function buildEdgeReviewItem(
     graphItemId: edge.id,
     title: `${sourceTitle} -> ${targetTitle}`,
     subtitle: `${edge.relationshipType} · ${edge.status}`,
+    relationshipType: edge.relationshipType,
     status: edge.status,
     priority: getEdgePriority(edge),
     reason: getEdgeReason(edge),
+    ...getEdgeReasonTranslation(edge),
     confidence: edge.confidence,
     sourceType: edge.provenance.sourceType,
   };
@@ -153,6 +170,30 @@ function getNodeReason(node: EngineeringNode): string {
   return "Generated from structured input and not yet human-confirmed.";
 }
 
+function getNodeReasonKey(node: EngineeringNode): TranslationKey {
+  if (node.provenance.sourceType === "manual_edit") {
+    if (node.status === "confirmed") {
+      return "review.reason.manualNodeConfirmed";
+    }
+
+    if (node.status === "needs_review") {
+      return "review.reason.manualNodeNeedsReview";
+    }
+
+    return "review.reason.manualNodeSuggested";
+  }
+
+  if (node.status === "confirmed") {
+    return "review.reason.nodeConfirmed";
+  }
+
+  if (node.status === "needs_review") {
+    return "review.reason.nodeNeedsReview";
+  }
+
+  return "review.reason.nodeSuggested";
+}
+
 function getEdgeReason(edge: EngineeringEdge): string {
   if (edge.provenance.sourceType === "manual_edit") {
     if (edge.status === "rejected") {
@@ -181,6 +222,47 @@ function getEdgeReason(edge: EngineeringEdge): string {
   }
 
   return edge.description || "Human-confirmed relationship.";
+}
+
+function getEdgeReasonTranslation(
+  edge: EngineeringEdge,
+): { reasonKey: TranslationKey; reasonValues?: TranslationValues } {
+  if (edge.provenance.sourceType === "manual_edit") {
+    if (edge.status === "rejected") {
+      return { reasonKey: "review.reason.manualEdgeRejected" };
+    }
+
+    if (edge.status === "suggested") {
+      return edge.description
+        ? {
+            reasonKey: "review.reason.manualEdgeSuggestedWithDescription",
+            reasonValues: { description: edge.description },
+          }
+        : { reasonKey: "review.reason.manualEdgeSuggested" };
+    }
+
+    return edge.description
+      ? {
+          reasonKey: "review.reason.manualEdgeConfirmedWithDescription",
+          reasonValues: { description: edge.description },
+        }
+      : { reasonKey: "review.reason.manualEdgeConfirmed" };
+  }
+
+  if (edge.status === "rejected") {
+    return { reasonKey: "review.reason.edgeRejected" };
+  }
+
+  if (edge.status === "suggested") {
+    return edge.description
+      ? {
+          reasonKey: "review.reason.edgeSuggestedWithDescription",
+          reasonValues: { description: edge.description },
+        }
+      : { reasonKey: "review.reason.edgeSuggested" };
+  }
+
+  return { reasonKey: "review.reason.edgeConfirmed" };
 }
 
 function compareReviewItems(a: ReviewItem, b: ReviewItem): number {

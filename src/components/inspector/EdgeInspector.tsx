@@ -4,6 +4,12 @@ import type {
   RelationshipType,
 } from "../../types/engineeringFlow";
 import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../../types/eflowCommand";
+import {
+  lifecycleStatusLabelKeys,
+  relationshipTypeLabelKeys,
+  reviewStatusLabelKeys,
+} from "../../lib/i18n/display-labels";
+import { useLanguage } from "../../lib/i18n/language-context";
 
 type EdgeInspectorProps = {
   edge: EngineeringEdge;
@@ -24,29 +30,30 @@ const relationshipTypes: RelationshipType[] = [
 const edgeStatuses: EdgeStatus[] = ["suggested", "confirmed", "rejected"];
 
 export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
+  const { t } = useLanguage();
   const displayedLifecycleStatus = edge.lifecycleStatus ?? "planned";
 
   return (
     <section className="inspector-section">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Edge inspector</p>
-          <h2>{edge.relationshipType}</h2>
+          <p className="eyebrow">{t("inspector.edge.eyebrow")}</p>
+          <h2>{t(relationshipTypeLabelKeys[edge.relationshipType])}</h2>
         </div>
         {edge.provenance.sourceType === "manual_edit" ? (
-          <span className="provenance-badge">Manual relationship</span>
+          <span className="provenance-badge">{t("inspector.edge.manualBadge")}</span>
         ) : null}
       </div>
       <div className="inspector-quick-actions">
         <button className="mini-button" type="button" onClick={() => onChange({ status: "confirmed" })}>
-          Confirm edge
+          {t("inspector.edge.confirm")}
         </button>
         <button className="danger-button" type="button" onClick={() => onChange({ status: "rejected" })}>
-          Reject edge
+          {t("inspector.edge.reject")}
         </button>
       </div>
       <label className="field">
-        <span>Relationship type</span>
+        <span>{t("inspector.edge.relationshipType")}</span>
         <select
           value={edge.relationshipType}
           onChange={(event) =>
@@ -55,26 +62,26 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
         >
           {relationshipTypes.map((type) => (
             <option value={type} key={type}>
-              {type}
+              {t(relationshipTypeLabelKeys[type])}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        <span>Status</span>
+        <span>{t("inspector.edge.status")}</span>
         <select
           value={edge.status}
           onChange={(event) => onChange({ status: event.target.value as EdgeStatus })}
         >
           {edgeStatuses.map((status) => (
             <option value={status} key={status}>
-              {status}
+              {t(reviewStatusLabelKeys[status])}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        <span>Lifecycle status</span>
+        <span>{t("inspector.edge.lifecycleStatus")}</span>
         <select
           value={displayedLifecycleStatus}
           onChange={(event) =>
@@ -83,13 +90,13 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
         >
           {LIFECYCLE_STATUSES.map((status) => (
             <option value={status} key={status}>
-              {status}
+              {t(lifecycleStatusLabelKeys[status])}
             </option>
           ))}
         </select>
       </label>
       <label className="field">
-        <span>Description</span>
+        <span>{t("inspector.edge.description")}</span>
         <textarea
           rows={5}
           value={edge.description}
@@ -102,16 +109,21 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
 }
 
 function AdvancedEdgeFields({ edge }: { edge: EngineeringEdge }) {
+  const { t } = useLanguage();
+
   return (
     <details className="advanced-fields" open>
-      <summary>Advanced provenance</summary>
-      <ReadOnlyRow label="Confidence" value={String(edge.confidence)} />
-      <ReadOnlyRow label="Source type" value={edge.provenance.sourceType} />
+      <summary>{t("inspector.provenance.advanced")}</summary>
+      <ReadOnlyRow label={t("inspector.provenance.confidence")} value={String(edge.confidence)} />
+      <ReadOnlyRow label={t("inspector.provenance.sourceType")} value={edge.provenance.sourceType} />
       <ReadOnlyRow
-        label="Source input IDs"
-        value={edge.provenance.sourceInputIds?.join(", ") ?? "none"}
+        label={t("inspector.provenance.sourceInputIds")}
+        value={edge.provenance.sourceInputIds?.join(", ") ?? t("inspector.provenance.none")}
       />
-      <ReadOnlyRow label="Generation rule" value={edge.provenance.generationRule ?? "none"} />
+      <ReadOnlyRow
+        label={t("inspector.provenance.generationRule")}
+        value={edge.provenance.generationRule ?? t("inspector.provenance.none")}
+      />
     </details>
   );
 }

@@ -67,17 +67,21 @@ export function InspectorPanel({
     : null;
 
   if (graph) {
-    const selectedItemMeta = selectedNode ? "Node" : selectedEdge ? "Edge" : "Project";
-    const selectedItemSubtitle = selectedNode
-      ? "Inspect and edit the selected graph node."
+    const selectedItemMeta = selectedNode
+      ? t("inspector.section.selectedItem.metaNode")
       : selectedEdge
-        ? "Inspect and edit the selected relationship."
-        : "Review the generated graph summary.";
+        ? t("inspector.section.selectedItem.metaEdge")
+        : t("inspector.section.selectedItem.metaProject");
+    const selectedItemSubtitle = selectedNode
+      ? t("inspector.section.selectedItem.nodeSubtitle")
+      : selectedEdge
+        ? t("inspector.section.selectedItem.edgeSubtitle")
+        : t("inspector.section.selectedItem.projectSubtitle");
 
     return (
       <div className="inspector-stack right-panel-stack">
         <CollapsibleSection
-          title="Selected Item"
+          title={t("inspector.section.selectedItem.title")}
           subtitle={selectedItemSubtitle}
           meta={selectedItemMeta}
           defaultOpen
@@ -103,9 +107,9 @@ export function InspectorPanel({
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Review"
-          subtitle="Confirm generated nodes and relationships."
-          meta="Queue"
+          title={t("inspector.section.review.title")}
+          subtitle={t("inspector.section.review.subtitle")}
+          meta={t("inspector.section.review.meta")}
           defaultOpen
           tour={{
             id: "inspector-review",
@@ -128,9 +132,9 @@ export function InspectorPanel({
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Implementation Progress"
-          subtitle="Lifecycle progress and manual context."
-          meta="Live"
+          title={t("inspector.section.implementation.title")}
+          subtitle={t("inspector.section.implementation.subtitle")}
+          meta={t("inspector.section.implementation.meta")}
           defaultOpen
         >
           <LifecycleProgressSummary graph={graph} />
@@ -138,9 +142,9 @@ export function InspectorPanel({
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Manual Editing"
-          subtitle="Add missing graph nodes and relationships."
-          meta="Local"
+          title={t("inspector.section.manualEditing.title")}
+          subtitle={t("inspector.section.manualEditing.subtitle")}
+          meta={t("inspector.section.manualEditing.meta")}
         >
           <AddManualNodePanel
             graph={graph}
@@ -157,17 +161,17 @@ export function InspectorPanel({
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Change History"
-          subtitle="Local workspace audit history."
-          meta={`${auditLog.length} events`}
+          title={t("inspector.section.changeHistory.title")}
+          subtitle={t("inspector.section.changeHistory.subtitle")}
+          meta={t("inspector.section.changeHistory.meta", { count: auditLog.length })}
         >
           <AuditLogPanel auditLog={auditLog} />
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="AI Interop"
-          subtitle="Local command intake and AI-native context."
-          meta="JSON"
+          title={t("inspector.section.aiInterop.title")}
+          subtitle={t("inspector.section.aiInterop.subtitle")}
+          meta={t("inspector.section.aiInterop.meta")}
           tour={{
             id: "ai-interop",
             step: "6",
@@ -198,9 +202,9 @@ export function InspectorPanel({
         </CollapsibleSection>
 
         <CollapsibleSection
-          title="Workspace / Export"
-          subtitle="Workspace persistence and legacy JSON handoffs."
-          meta="Files"
+          title={t("inspector.section.workspaceExport.title")}
+          subtitle={t("inspector.section.workspaceExport.subtitle")}
+          meta={t("inspector.section.workspaceExport.meta")}
           tour={{
             id: "workspace-export",
             step: "7",
@@ -230,9 +234,9 @@ export function InspectorPanel({
   return (
     <div className="inspector-stack right-panel-stack">
       <CollapsibleSection
-        title="Selected Item"
-        subtitle="Project summary before graph generation."
-        meta="Project"
+        title={t("inspector.section.selectedItem.title")}
+        subtitle={t("inspector.section.selectedItem.beforeGraphSubtitle")}
+        meta={t("inspector.section.selectedItem.metaProject")}
         defaultOpen
         tour={{
           id: "inspector-review",
@@ -258,17 +262,17 @@ export function InspectorPanel({
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="Change History"
-        subtitle="Local workspace audit history."
-        meta={`${auditLog.length} events`}
+        title={t("inspector.section.changeHistory.title")}
+        subtitle={t("inspector.section.changeHistory.subtitle")}
+        meta={t("inspector.section.changeHistory.meta", { count: auditLog.length })}
       >
         <AuditLogPanel auditLog={auditLog} />
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="AI Interop"
-        subtitle="Validate local commands and prepare AI context."
-        meta="JSON"
+        title={t("inspector.section.aiInterop.title")}
+        subtitle={t("inspector.section.aiInterop.beforeGraphSubtitle")}
+        meta={t("inspector.section.aiInterop.meta")}
         tour={{
           id: "ai-interop",
           step: "6",
@@ -299,9 +303,9 @@ export function InspectorPanel({
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="Workspace / Export"
-        subtitle="Import, restore, and export workspace JSON."
-        meta="Files"
+        title={t("inspector.section.workspaceExport.title")}
+        subtitle={t("inspector.section.workspaceExport.beforeGraphSubtitle")}
+        meta={t("inspector.section.workspaceExport.meta")}
         tour={{
           id: "workspace-export",
           step: "7",

@@ -15,7 +15,9 @@ import {
   type LifecycleStatus,
 } from "../../types/eflowCommand";
 import { toReactFlowEdges, toReactFlowNodes } from "../../lib/graphAdapters";
+import { lifecycleStatusLabelKeys } from "../../lib/i18n/display-labels";
 import { useLanguage } from "../../lib/i18n/language-context";
+import type { TranslationKey } from "../../lib/i18n/types";
 import { EngineeringNodeCard } from "./EngineeringNodeCard";
 
 type EngineeringFlowCanvasProps = {
@@ -45,38 +47,27 @@ type CanvasFilter =
   | "confirmed"
   | "needs_review";
 
-const canvasFilters: Array<{ id: CanvasFilter; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "intent", label: "Intent" },
-  { id: "users", label: "Users" },
-  { id: "screens", label: "Screens" },
-  { id: "features", label: "Features" },
-  { id: "flow", label: "Flow" },
-  { id: "data", label: "Data" },
-  { id: "ai", label: "AI" },
-  { id: "questions", label: "Questions" },
-  { id: "confirmed", label: "Confirmed" },
-  { id: "needs_review", label: "Needs Review" },
+const canvasFilters: Array<{ id: CanvasFilter; labelKey: TranslationKey }> = [
+  { id: "all", labelKey: "canvas.filter.all" },
+  { id: "intent", labelKey: "canvas.filter.intent" },
+  { id: "users", labelKey: "canvas.filter.users" },
+  { id: "screens", labelKey: "canvas.filter.screens" },
+  { id: "features", labelKey: "canvas.filter.features" },
+  { id: "flow", labelKey: "canvas.filter.flow" },
+  { id: "data", labelKey: "canvas.filter.data" },
+  { id: "ai", labelKey: "canvas.filter.ai" },
+  { id: "questions", labelKey: "canvas.filter.questions" },
+  { id: "confirmed", labelKey: "canvas.filter.confirmed" },
+  { id: "needs_review", labelKey: "canvas.filter.needsReview" },
 ];
 
 type LifecycleCanvasFilter = "all" | LifecycleStatus;
 
-const lifecycleFilterLabels: Record<LifecycleStatus, string> = {
-  draft: "Draft",
-  planned: "Planned",
-  ready: "Ready",
-  developing: "Developing",
-  completed: "Completed",
-  blocked: "Blocked",
-  needs_refactor: "Needs refactor",
-  deprecated: "Deprecated",
-};
-
-const lifecycleFilters: Array<{ id: LifecycleCanvasFilter; label: string }> = [
-  { id: "all", label: "All" },
+const lifecycleFilters: Array<{ id: LifecycleCanvasFilter; labelKey: TranslationKey }> = [
+  { id: "all", labelKey: "canvas.filter.all" },
   ...LIFECYCLE_STATUSES.map((status) => ({
     id: status,
-    label: lifecycleFilterLabels[status],
+    labelKey: lifecycleStatusLabelKeys[status],
   })),
 ];
 
@@ -168,12 +159,9 @@ export function EngineeringFlowCanvas({
         data-tour-body={t("tour.canvas.body")}
         data-tour-position="bottom"
       >
-        <p className="eyebrow">Canvas</p>
-        <h2>Generate an engineering flow</h2>
-        <p>
-          The graph will render here from structured input. It stays editable, but the exported
-          JSON remains the source of truth.
-        </p>
+        <p className="eyebrow">{t("canvas.empty.eyebrow")}</p>
+        <h2>{t("canvas.empty.title")}</h2>
+        <p>{t("canvas.empty.body")}</p>
       </div>
     );
   }
@@ -214,21 +202,25 @@ export function EngineeringFlowCanvas({
         data-tour-title={t("tour.canvas.title")}
         data-tour-body={t("tour.canvas.body")}
         data-tour-position="bottom"
-      >
+        >
         <div className="canvas-heading">
           <div>
-            <p className="eyebrow">Engineering Flow Canvas</p>
+            <p className="eyebrow">{t("canvas.header.eyebrow")}</p>
             <h2>{graph.title}</h2>
           </div>
           <span className="graph-counts">
-            {filteredGraph.nodes.length} of {graph.nodes.length} nodes / {filteredGraph.edges.length} of{" "}
-            {graph.edges.length} edges
+            {t("canvas.header.counts", {
+              visibleNodes: filteredGraph.nodes.length,
+              totalNodes: graph.nodes.length,
+              visibleEdges: filteredGraph.edges.length,
+              totalEdges: graph.edges.length,
+            })}
           </span>
         </div>
-        <div className="canvas-filter-stack" aria-label="Canvas filters">
+        <div className="canvas-filter-stack" aria-label={t("canvas.filters.ariaLabel")}>
           <div className="canvas-filter-group">
-            <span className="canvas-filter-label">Graph</span>
-            <div className="canvas-filter-row" aria-label="Graph filters">
+            <span className="canvas-filter-label">{t("canvas.filters.graphLabel")}</span>
+            <div className="canvas-filter-row" aria-label={t("canvas.filters.graphAriaLabel")}>
               {canvasFilters.map((filter) => (
                 <button
                   className={`filter-chip ${activeFilter === filter.id ? "is-active" : ""}`}
@@ -237,14 +229,14 @@ export function EngineeringFlowCanvas({
                   type="button"
                   onClick={() => setActiveFilter(filter.id)}
                 >
-                  {filter.label}
+                  {t(filter.labelKey)}
                 </button>
               ))}
             </div>
           </div>
           <div className="canvas-filter-group">
-            <span className="canvas-filter-label">Lifecycle</span>
-            <div className="canvas-filter-row" aria-label="Lifecycle filters">
+            <span className="canvas-filter-label">{t("canvas.filters.lifecycleLabel")}</span>
+            <div className="canvas-filter-row" aria-label={t("canvas.filters.lifecycleAriaLabel")}>
               {lifecycleFilters.map((filter) => (
                 <button
                   className={`filter-chip ${activeLifecycleFilter === filter.id ? "is-active" : ""}`}
@@ -253,7 +245,7 @@ export function EngineeringFlowCanvas({
                   type="button"
                   onClick={() => setActiveLifecycleFilter(filter.id)}
                 >
-                  <span>{filter.label}</span>
+                  <span>{t(filter.labelKey)}</span>
                   <span className="filter-chip-count">
                     {filter.id === "all"
                       ? graph.nodes.length
