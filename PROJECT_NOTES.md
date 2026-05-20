@@ -25,6 +25,26 @@ Core product principles:
 
 This repository is not a Next.js app. The backend route is a Vercel-style serverless function under `api/`.
 
+## Architecture Source Status
+
+Source tree verification has begun. The first architecture gap pass is complete
+for workspace graph import validation, shared graph integrity checks, command
+lifecycle update behavior, command provenance source type validation, owner UI
+duplicate edge relationship prevention, and the matching `validateExample`
+invariant checks.
+
+The specific source artifacts verified for this pass include
+`src/lib/workspaceValidation.ts`, `src/lib/graphIntegrity.ts`,
+`src/lib/applyEflowCommand.ts`, `src/lib/eflowCommandValidation.ts`,
+`src/App.tsx`, `src/components/inspector/EdgeInspector.tsx`, and
+`scripts/validateExample.ts`.
+
+Remaining source verification is still ongoing; do not treat the whole
+architecture as fully source-verified. The pass completed with
+`npm run validate:example`, `npm run build`, and `git diff --check` passing;
+the build retained the existing Vite large chunk warning. Remaining roadmap and
+feature work is not blocked by this governance pass.
+
 ## Chat Attachment Feature
 
 The AI Collaboration Console supports file attachments for:
