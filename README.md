@@ -207,13 +207,16 @@ npm run build
 
 ## Deployment
 
-EFlow 目前可作為 static Vite app deployment。`npm run build` 會執行 TypeScript build 和 Vite production build，產生 `dist/`。
+EFlow core workspace 是 static Vite/React app；`npm run build` 會執行 TypeScript build 和 Vite production build，產生 `dist/`。AI Chat 不是 static-only：目前需要同站可用的 `/api/chat-with-files` Vercel-style serverless route。
 
 Deployment notes：
 
-- 適合 Vercel、Netlify 或 GitHub Pages static hosting。
-- Core workspace 不需要 database、auth service、cloud sync、MCP server、REST API 或 CLI。
-- Optional AI Chat 需要 `/api/chat-with-files` serverless route；使用者未在 UI 輸入 API key 時，route 會 fallback 讀取 `OPENAI_API_KEY` environment variable。
+- Core workspace 可部署到 Vercel、Netlify 或 GitHub Pages 等 static hosting，且不需要 database、auth service、cloud sync、MCP server、REST API 或 CLI。
+- AI Chat 需要 `/api/chat-with-files` 在 runtime 存在；該 route 會包裝 OpenAI Files API 與 OpenAI Responses API，並支援文字聊天與附件聊天。
+- Vercel deployment 應同時部署 Vite frontend 與 `api/chat-with-files.ts` serverless function。
+- Static-only hosting（例如只上傳 `dist/` 到 GitHub Pages）仍可使用 core workspace，但 AI Chat 會因沒有 `/api/chat-with-files` 而失敗。
+- Static-only hosting 若要支援 AI Chat，需要另一個可呼叫的 backend/proxy，或另行設計 direct-browser OpenAI mode；目前 source code 沒有 direct-browser OpenAI mode。
+- API key 可由使用者在 AI Chat 前端輸入並送到後端 route；若未輸入，route 會 fallback 讀取 server environment 的 `OPENAI_API_KEY`。
 - Workspace data 會儲存在 browser `localStorage`。
 - 部署成 static site 後，workspace data 仍是 browser-local，不會跨 browsers、devices 或 users sync。
 - Live demo URL：pending。

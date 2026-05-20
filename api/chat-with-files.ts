@@ -36,6 +36,7 @@ type UploadedOpenAIFile = {
 
 type ResponseInputContent =
   | { type: "input_text"; text: string }
+  | { type: "output_text"; text: string }
   | { type: "input_file"; file_id: string }
   | { type: "input_image"; file_id: string; detail: "auto" };
 
@@ -124,6 +125,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const systemPrompt = getField(fields, "systemPrompt").trim();
     const previousResponseId = getField(fields, "previousResponseId").trim();
     const history = parseHistory(getField(fields, "history"));
+    const historyForRequest = previousResponseId ? [] : history;
     const requestMode = getRequestMode(getField(fields, "requestMode"));
 
     if (!message && files.length === 0 && requestMode !== "model_test") {
@@ -173,7 +175,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       model,
       message,
       systemPrompt,
-      history,
+      history: historyForRequest,
       previousResponseId,
       uploadedFiles,
     });
@@ -383,10 +385,7 @@ async function createOpenAIResponse({
   }
 
   input.push(
-    ...history.map((historyMessage) => ({
-      role: historyMessage.role,
-      content: [{ type: "input_text" as const, text: historyMessage.content }],
-    })),
+    ...history.map(historyMessageToResponseInputMessage),
   );
 
   input.push({
@@ -423,6 +422,18 @@ async function createOpenAIResponse({
   }
 
   return payload;
+}
+
+function historyMessageToResponseInputMessage(historyMessage: HistoryMessage): ResponseInputMessage {
+  return {
+    role: historyMessage.role,
+    content: [
+      {
+        type: historyMessage.role === "assistant" ? "output_text" : "input_text",
+        text: historyMessage.content,
+      },
+    ],
+  };
 }
 
 export function extractOutputText(payload: unknown): string {
@@ -704,8 +715,13 @@ function logSafeChatError(status: number, payload: SafeErrorResponse) {
   console.error("[api/chat-with-files] chat_error", {
     status,
     code: payload.code,
-    details: payload.details,
+    details: getLogSafeDetails(payload.details),
   });
+}
+
+function getLogSafeDetails(details: SafeErrorDetails): SafeErrorDetails {
+  const { providerMessage: _providerMessage, ...logSafeDetails } = details;
+  return logSafeDetails;
 }
 
 function getField(fields: RequestFields, fieldName: string): string {

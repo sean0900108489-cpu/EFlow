@@ -159,12 +159,14 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
         eflowContextJson,
       }),
     });
-    const historyForRequest = chatMessages
-      .filter((message) => !message.error)
-      .map<ProviderInputMessage>((message) => ({
-        role: message.role,
-        content: message.content,
-      }));
+    const historyForRequest = trimmedPreviousResponseId
+      ? []
+      : chatMessages
+          .filter((message) => !message.error)
+          .map<ProviderInputMessage>((message) => ({
+            role: message.role,
+            content: message.content,
+          }));
     const userMessage: ChatMessage = {
       id: createMessageId("user"),
       role: "user",
@@ -238,12 +240,14 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   function handleModelSelectionChange(selectedModel: string) {
     if (selectedModel === CUSTOM_MODEL_OPTION_VALUE) {
       if (!isCustomModel) {
-        setModel("");
+        setModelAndResetContinuation("");
       }
       return;
     }
 
-    setModel(selectedModel);
+    if (selectedModel !== model) {
+      setModelAndResetContinuation(selectedModel);
+    }
   }
 
   async function testSelectedModel() {
@@ -329,6 +333,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
 
   function clearChat() {
     setChatMessages([]);
+    resetResponseContinuationState();
     setStatusMessage({ type: "info", text: t("aiChat.status.chatCleared") });
   }
 
@@ -336,12 +341,24 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     setApiKey("");
     setRememberKey(false);
     writeStoredApiKey("");
+    resetResponseContinuationState();
     setStatusMessage({ type: "info", text: t("aiChat.status.apiKeyCleared") });
   }
 
   function clearPreviousResponseId() {
-    setPreviousResponseId("");
+    resetResponseContinuationState();
     setStatusMessage({ type: "info", text: t("aiChat.status.previousResponseIdCleared") });
+  }
+
+  function resetResponseContinuationState() {
+    setPreviousResponseId("");
+    setLatestResponseId("");
+    setAutoContinueWithLatestResponseId(false);
+  }
+
+  function setModelAndResetContinuation(nextModel: string) {
+    setModel(nextModel);
+    resetResponseContinuationState();
   }
 
   function openAttachmentPicker() {
@@ -463,7 +480,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                 <input
                   type="text"
                   value={model}
-                  onChange={(event) => setModel(event.target.value)}
+                  onChange={(event) => setModelAndResetContinuation(event.target.value)}
                   placeholder={t("aiChat.settings.customModelPlaceholder")}
                   autoComplete="off"
                 />
@@ -528,7 +545,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                 className="mini-button"
                 type="button"
                 onClick={clearPreviousResponseId}
-                disabled={!previousResponseId}
+                disabled={!previousResponseId && !latestResponseId && !autoContinueWithLatestResponseId}
               >
                 {t("aiChat.thread.clearPreviousResponseId")}
               </button>
