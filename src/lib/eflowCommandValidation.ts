@@ -5,6 +5,7 @@ import {
   EFLOW_COMMAND_SCHEMA_VERSION,
   EFLOW_EVIDENCE_TYPES,
   EFLOW_NODE_TYPES,
+  EFLOW_PROVENANCE_SOURCE_TYPES,
   EFLOW_RELATIONSHIP_TYPES,
   LIFECYCLE_STATUSES,
   REVIEW_STATUSES,
@@ -14,6 +15,7 @@ import {
   type EFlowCommandMode,
   type EFlowEvidenceType,
   type EFlowNodeType,
+  type EFlowProvenanceSourceType,
   type EFlowRelationshipType,
   type LifecycleStatus,
   type ReviewStatus,
@@ -49,6 +51,10 @@ export function isReviewStatus(value: unknown): value is ReviewStatus {
 
 export function isLifecycleStatus(value: unknown): value is LifecycleStatus {
   return LIFECYCLE_STATUSES.includes(value as LifecycleStatus);
+}
+
+export function isProvenanceSourceType(value: unknown): value is EFlowProvenanceSourceType {
+  return EFLOW_PROVENANCE_SOURCE_TYPES.includes(value as EFlowProvenanceSourceType);
 }
 
 export function isEFlowCommandEnvelope(value: unknown): value is EFlowCommandEnvelope {
@@ -434,6 +440,20 @@ function validateProvenance(
   }
 
   requireNonEmptyString(provenance.sourceType, `${path}.sourceType`, "sourceType", issues);
+  if (
+    typeof provenance.sourceType === "string" &&
+    provenance.sourceType.trim().length > 0 &&
+    !isProvenanceSourceType(provenance.sourceType)
+  ) {
+    issues.push(
+      makeIssue(
+        "error",
+        "provenance.invalid_source_type",
+        `${path}.sourceType`,
+        "sourceType must be a supported provenance source type.",
+      ),
+    );
+  }
   validateOptionalEvidence(provenance.evidence, `${path}.evidence`, issues);
 }
 

@@ -89,7 +89,18 @@ export function InspectorPanel({
           {selectedNode ? (
             <NodeInspector node={selectedNode} onChange={(patch) => onUpdateNode(selectedNode.id, patch)} />
           ) : selectedEdge ? (
-            <EdgeInspector edge={selectedEdge} onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)} />
+            <EdgeInspector
+              edge={selectedEdge}
+              disabledRelationshipTypes={graph.edges
+                .filter(
+                  (edge) =>
+                    edge.id !== selectedEdge.id &&
+                    edge.source === selectedEdge.source &&
+                    edge.target === selectedEdge.target,
+                )
+                .map((edge) => edge.relationshipType)}
+              onChange={(patch) => onUpdateEdge(selectedEdge.id, patch)}
+            />
           ) : (
             <EmptyInspector
               input={input}

@@ -1,3 +1,4 @@
+import { EFLOW_PROVENANCE_SOURCE_TYPES } from "../types/eflowCommand";
 import type {
   EFlowCommandEdge,
   EFlowCommandEnvelope,
@@ -25,6 +26,7 @@ import {
   type EFlowCommandValidationIssue,
   validateEFlowCommandEnvelope,
 } from "./eflowCommandValidation";
+import { wouldDuplicateExactEdgeRelationship } from "./graphIntegrity";
 
 export const DEFAULT_COMMAND_LIFECYCLE_STATUS: LifecycleStatus = "planned";
 
@@ -225,11 +227,14 @@ function updateNode(
     provenance: patch.provenance
       ? toNodeProvenance(patch.provenance, command, operation)
       : node.provenance,
-    lifecycleStatus: patch.lifecycleStatus ?? node.lifecycleStatus ?? DEFAULT_COMMAND_LIFECYCLE_STATUS,
     commandProvenance: appendCommandProvenance(node.commandProvenance, command, operation),
     implementation: mergeImplementation(node, command, operation, patch.lifecycleStatus),
     metadata: patch.metadata ?? node.metadata,
   };
+
+  if (patch.lifecycleStatus !== undefined) {
+    updatedNode.lifecycleStatus = patch.lifecycleStatus;
+  }
 
   graph.nodes[nodeIndex] = updatedNode;
   changes.push({
@@ -398,11 +403,14 @@ function updateEdge(
     description: patch.description ?? edge.description,
     confidence: patch.confidence ?? edge.confidence,
     provenance: patch.provenance ? toEdgeProvenance(patch.provenance, command, operation) : edge.provenance,
-    lifecycleStatus: patch.lifecycleStatus ?? edge.lifecycleStatus ?? DEFAULT_COMMAND_LIFECYCLE_STATUS,
     commandProvenance: appendCommandProvenance(edge.commandProvenance, command, operation),
     implementation: mergeImplementation(edge, command, operation, patch.lifecycleStatus),
     metadata: patch.metadata ?? edge.metadata,
   };
+
+  if (patch.lifecycleStatus !== undefined) {
+    graph.edges[edgeIndex].lifecycleStatus = patch.lifecycleStatus;
+  }
 
   changes.push({
     operationIndex,
@@ -651,20 +659,11 @@ function toEdgeProvenance(
 }
 
 function toSourceType(sourceType: string | undefined): SourceType {
-  if (
-    sourceType === "user_input" ||
-    sourceType === "example_seed" ||
-    sourceType === "system_generated" ||
-    sourceType === "ai_suggested" ||
-    sourceType === "manual_edit" ||
-    sourceType === "ai_command" ||
-    sourceType === "ai_progress_sync" ||
-    sourceType === "context_import"
-  ) {
-    return sourceType;
+  if (EFLOW_PROVENANCE_SOURCE_TYPES.includes(sourceType as EFlowProvenance["sourceType"])) {
+    return sourceType as SourceType;
   }
 
-  return "ai_command";
+  throw new Error(`Unsupported provenance sourceType "${sourceType}".`);
 }
 
 function reviewStatusToNodeStatus(reviewStatus: ReviewStatus | undefined): NodeStatus | null | undefined {
@@ -695,13 +694,11 @@ function wouldDuplicateExactEdge(
   target: string,
   relationshipType: RelationshipType,
 ): boolean {
-  return graph.edges.some(
-    (edge) =>
-      edge.id !== currentEdgeId &&
-      edge.source === source &&
-      edge.target === target &&
-      edge.relationshipType === relationshipType,
-  );
+  return wouldDuplicateExactEdgeRelationship(graph.edges, currentEdgeId, {
+    source,
+    target,
+    relationshipType,
+  });
 }
 
 function makeUnsupportedNodeTypeIssue(

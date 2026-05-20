@@ -46,8 +46,10 @@ export const EFLOW_AUDIT_EVENT_TYPES = [
   "manual_node_created",
   "manual_edge_created",
   "ai_command_applied",
+  "node_metadata_changed",
   "node_review_status_changed",
   "node_lifecycle_status_changed",
+  "edge_metadata_changed",
   "edge_review_status_changed",
   "edge_lifecycle_status_changed",
 ] as const;

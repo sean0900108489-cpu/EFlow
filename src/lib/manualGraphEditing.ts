@@ -9,6 +9,7 @@ import type {
   RelationshipType,
 } from "../types/engineeringFlow";
 import { nowIso } from "./dates";
+import { wouldDuplicateExactEdgeRelationship } from "./graphIntegrity";
 
 const DEFAULT_MANUAL_STATUS = "confirmed";
 const DEFAULT_MANUAL_LIFECYCLE_STATUS: LifecycleStatus = "planned";
@@ -155,14 +156,7 @@ export function insertManualEdge(
     );
   }
 
-  if (
-    graph.edges.some(
-      (candidate) =>
-        candidate.source === edge.source &&
-        candidate.target === edge.target &&
-        candidate.relationshipType === edge.relationshipType,
-    )
-  ) {
+  if (wouldDuplicateExactEdgeRelationship(graph.edges, edge.id, edge)) {
     return fail(
       graph,
       "graph.duplicate_exact_edge",

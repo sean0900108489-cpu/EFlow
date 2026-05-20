@@ -9,8 +9,14 @@ import type {
   RelationshipType,
   SourceType,
 } from "../types/engineeringFlow";
-import { LIFECYCLE_STATUSES, type LifecycleStatus } from "../types/eflowCommand";
+import {
+  EFLOW_EVIDENCE_TYPES,
+  LIFECYCLE_STATUSES,
+  type EFlowEvidenceType,
+  type LifecycleStatus,
+} from "../types/eflowCommand";
 import { validateEFlowAuditLog } from "./auditLog";
+import { getExactEdgeRelationshipKey } from "./graphIntegrity";
 
 export type ValidationResult = {
   ok: boolean;
@@ -52,6 +58,16 @@ const relationshipTypes: RelationshipType[] = [
   "needs_confirmation",
   "relates_to",
 ];
+
+const provenanceStringFields = [
+  "sourceInputSection",
+  "sourceInputId",
+  "generationRule",
+  "commandId",
+  "actorId",
+  "updatedAt",
+  "reason",
+] as const;
 
 export function isEngineeringFlowInput(value: unknown): value is EngineeringFlowInput {
   if (!isRecord(value)) return false;
@@ -177,6 +193,8 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
   const nodes = value.nodes as unknown[];
   const edges = value.edges as unknown[];
   const nodeIds = new Set<string>();
+  const edgeIds = new Set<string>();
+  const edgeRelationshipKeys = new Set<string>();
 
   nodes.forEach((node, index) => {
     if (!isRecord(node)) {
@@ -186,6 +204,8 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
 
     if (typeof node.id !== "string" || !node.id) {
       errors.push(`Node ${index} is missing id.`);
+    } else if (nodeIds.has(node.id)) {
+      errors.push(`Node ${node.id} has duplicate id.`);
     } else {
       nodeIds.add(node.id);
     }
@@ -205,6 +225,9 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
     if (typeof node.aiReadableSummary !== "string" || !node.aiReadableSummary) {
       errors.push(`Node ${node.id ?? index} is missing aiReadableSummary.`);
     }
+
+    validateConfidence(node.confidence, `Node ${node.id ?? index}`, errors);
+    validateProvenance(node.provenance, `Node ${node.id ?? index}`, errors);
 
     if (
       node.lifecycleStatus !== undefined &&
@@ -233,6 +256,10 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
 
     if (typeof edge.id !== "string" || !edge.id) {
       errors.push(`Edge ${index} is missing id.`);
+    } else if (edgeIds.has(edge.id)) {
+      errors.push(`Edge ${edge.id} has duplicate id.`);
+    } else {
+      edgeIds.add(edge.id);
     }
 
     if (typeof edge.source !== "string" || !edge.source) {
@@ -247,8 +274,41 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
       errors.push(`Edge ${edge.id ?? index} target references missing node "${edge.target}".`);
     }
 
+    if (
+      typeof edge.source === "string" &&
+      edge.source &&
+      typeof edge.target === "string" &&
+      edge.target &&
+      edge.source === edge.target
+    ) {
+      errors.push(`Edge ${edge.id ?? index} cannot reference itself.`);
+    }
+
     if (!relationshipTypes.includes(edge.relationshipType as RelationshipType)) {
       errors.push(`Edge ${edge.id ?? index} has invalid relationshipType.`);
+    }
+
+    if (
+      typeof edge.source === "string" &&
+      edge.source &&
+      typeof edge.target === "string" &&
+      edge.target &&
+      typeof edge.relationshipType === "string" &&
+      edge.relationshipType
+    ) {
+      const relationshipKey = getExactEdgeRelationshipKey({
+        source: edge.source,
+        target: edge.target,
+        relationshipType: edge.relationshipType,
+      });
+
+      if (edgeRelationshipKeys.has(relationshipKey)) {
+        errors.push(
+          `Edge ${edge.id ?? index} duplicates relationship ${edge.source} -> ${edge.target} (${edge.relationshipType}).`,
+        );
+      } else {
+        edgeRelationshipKeys.add(relationshipKey);
+      }
     }
 
     if (!edgeStatuses.includes(edge.status as EdgeStatus)) {
@@ -259,6 +319,9 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
       errors.push(`Edge ${edge.id ?? index} is missing description.`);
     }
 
+    validateConfidence(edge.confidence, `Edge ${edge.id ?? index}`, errors);
+    validateProvenance(edge.provenance, `Edge ${edge.id ?? index}`, errors);
+
     if (
       edge.lifecycleStatus !== undefined &&
       !LIFECYCLE_STATUSES.includes(edge.lifecycleStatus as LifecycleStatus)
@@ -268,6 +331,106 @@ export function validateEngineeringFlowGraph(value: unknown): ValidationResult {
   });
 
   return { ok: errors.length === 0, errors };
+}
+
+function validateConfidence(
+  confidence: unknown,
+  subject: string,
+  errors: string[],
+): void {
+  if (confidence === undefined) {
+    errors.push(`${subject} is missing confidence.`);
+    return;
+  }
+
+  if (
+    typeof confidence !== "number" ||
+    !Number.isFinite(confidence) ||
+    confidence < 0 ||
+    confidence > 1
+  ) {
+    errors.push(`${subject} has invalid confidence.`);
+  }
+}
+
+function validateProvenance(
+  provenance: unknown,
+  subject: string,
+  errors: string[],
+): void {
+  if (provenance === undefined) {
+    errors.push(`${subject} is missing provenance.`);
+    return;
+  }
+
+  if (!isRecord(provenance) || Array.isArray(provenance)) {
+    errors.push(`${subject} has invalid provenance.`);
+    return;
+  }
+
+  if (
+    typeof provenance.sourceType !== "string" ||
+    !sourceTypes.includes(provenance.sourceType as SourceType)
+  ) {
+    errors.push(`${subject} has invalid provenance.sourceType.`);
+  }
+
+  provenanceStringFields.forEach((field) => {
+    if (provenance[field] !== undefined && typeof provenance[field] !== "string") {
+      errors.push(`${subject} provenance.${field} must be a string when provided.`);
+    }
+  });
+
+  if (
+    provenance.sourceInputIds !== undefined &&
+    (!Array.isArray(provenance.sourceInputIds) ||
+      provenance.sourceInputIds.some((sourceInputId) => typeof sourceInputId !== "string"))
+  ) {
+    errors.push(`${subject} provenance.sourceInputIds must be an array of strings when provided.`);
+  }
+
+  validateEvidence(provenance.evidence, `${subject} provenance.evidence`, errors);
+}
+
+function validateEvidence(
+  evidence: unknown,
+  path: string,
+  errors: string[],
+): void {
+  if (evidence === undefined) return;
+
+  if (!Array.isArray(evidence)) {
+    errors.push(`${path} must be an array when provided.`);
+    return;
+  }
+
+  evidence.forEach((entry, index) => {
+    const entryPath = `${path}[${index}]`;
+
+    if (!isRecord(entry) || Array.isArray(entry)) {
+      errors.push(`${entryPath} must be an object.`);
+      return;
+    }
+
+    if (!EFLOW_EVIDENCE_TYPES.includes(entry.type as EFlowEvidenceType)) {
+      errors.push(`${entryPath}.type has invalid evidence type.`);
+    }
+
+    if (entry.uri !== undefined && typeof entry.uri !== "string") {
+      errors.push(`${entryPath}.uri must be a string when provided.`);
+    }
+
+    if (entry.text !== undefined && typeof entry.text !== "string") {
+      errors.push(`${entryPath}.text must be a string when provided.`);
+    }
+
+    if (
+      entry.metadata !== undefined &&
+      (!isRecord(entry.metadata) || Array.isArray(entry.metadata))
+    ) {
+      errors.push(`${entryPath}.metadata must be an object when provided.`);
+    }
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

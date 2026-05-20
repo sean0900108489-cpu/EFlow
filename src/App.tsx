@@ -18,6 +18,7 @@ import {
 } from "./lib/auditLog";
 import { nowIso } from "./lib/dates";
 import { generateEngineeringFlow } from "./lib/generateEngineeringFlow";
+import { wouldDuplicateExactEdgeRelationship } from "./lib/graphIntegrity";
 import {
   buildWorkspaceDocument,
   clearWorkspaceFromLocalStorage,
@@ -41,6 +42,11 @@ function cloneInput(input: EngineeringFlowInput): EngineeringFlowInput {
 
 type ImportAuditEventType = "workspace_imported" | "full_ai_context_imported";
 type Translate = (key: TranslationKey, values?: TranslationValues) => string;
+type MetadataAuditChange = {
+  field: string;
+  before: unknown;
+  after: unknown;
+};
 type AutosaveStatus =
   | { key: "app.autosave.unavailable" }
   | { key: "app.autosave.ready" }
@@ -50,6 +56,14 @@ type AutosaveStatus =
   | { key: "app.autosave.workspaceImported"; time: string }
   | { key: "app.autosave.fullContextImported" }
   | { key: "app.autosave.cleared" };
+
+const NODE_METADATA_AUDIT_FIELDS = [
+  "title",
+  "description",
+  "type",
+  "aiReadableSummary",
+] as const;
+const EDGE_METADATA_AUDIT_FIELDS = ["relationshipType", "description"] as const;
 
 export default function App() {
   const [route, setRoute] = useState(() => readAppRoute());
@@ -266,6 +280,17 @@ function WorkspaceApp({ tutorialMode }: WorkspaceAppProps) {
     if (!currentEdge) return;
 
     const nextEdge = { ...currentEdge, ...patch };
+    const relationshipChanged =
+      patch.source !== undefined ||
+      patch.target !== undefined ||
+      patch.relationshipType !== undefined;
+    if (
+      relationshipChanged &&
+      wouldDuplicateExactEdgeRelationship(engineeringFlowGraph.edges, edgeId, nextEdge)
+    ) {
+      return;
+    }
+
     setEngineeringFlowGraph({
       ...engineeringFlowGraph,
       updatedAt: nowIso(),
@@ -593,6 +618,11 @@ function buildNodeAuditEvents(
     );
   }
 
+  const metadataEvent = buildNodeMetadataAuditEvent(currentNode, nextNode, patch);
+  if (metadataEvent) {
+    events.push(metadataEvent);
+  }
+
   return events;
 }
 
@@ -665,7 +695,109 @@ function buildEdgeAuditEvents(
     );
   }
 
+  const metadataEvent = buildEdgeMetadataAuditEvent(currentEdge, nextEdge, patch);
+  if (metadataEvent) {
+    events.push(metadataEvent);
+  }
+
   return events;
+}
+
+function buildNodeMetadataAuditEvent(
+  currentNode: EngineeringNode,
+  nextNode: EngineeringNode,
+  patch: Partial<EngineeringNode>,
+): EFlowAuditEvent | null {
+  const changes = NODE_METADATA_AUDIT_FIELDS.flatMap((field): MetadataAuditChange[] => {
+    if (!Object.prototype.hasOwnProperty.call(patch, field)) return [];
+    if (Object.is(currentNode[field], nextNode[field])) return [];
+
+    return [
+      {
+        field,
+        before: currentNode[field],
+        after: nextNode[field],
+      },
+    ];
+  });
+
+  if (changes.length === 0) return null;
+
+  return createAuditEvent({
+    actor: {
+      type: "human",
+      id: "local-user",
+      name: "Local user",
+    },
+    source: "manual_ui",
+    eventType: "node_metadata_changed",
+    summary: `Changed node "${currentNode.title}" metadata fields: ${formatChangedFields(changes)}.`,
+    target: {
+      type: "node",
+      id: currentNode.id,
+    },
+    before: buildAuditChangeSnapshot(changes, "before"),
+    after: buildAuditChangeSnapshot(changes, "after"),
+    metadata: {
+      action: "owner_ui_metadata_edit",
+      fields: changes.map((change) => change.field),
+    },
+  });
+}
+
+function buildEdgeMetadataAuditEvent(
+  currentEdge: EngineeringEdge,
+  nextEdge: EngineeringEdge,
+  patch: Partial<EngineeringEdge>,
+): EFlowAuditEvent | null {
+  const changes = EDGE_METADATA_AUDIT_FIELDS.flatMap((field): MetadataAuditChange[] => {
+    if (!Object.prototype.hasOwnProperty.call(patch, field)) return [];
+    if (Object.is(currentEdge[field], nextEdge[field])) return [];
+
+    return [
+      {
+        field,
+        before: currentEdge[field],
+        after: nextEdge[field],
+      },
+    ];
+  });
+
+  if (changes.length === 0) return null;
+
+  return createAuditEvent({
+    actor: {
+      type: "human",
+      id: "local-user",
+      name: "Local user",
+    },
+    source: "manual_ui",
+    eventType: "edge_metadata_changed",
+    summary: `Changed edge "${currentEdge.id}" metadata fields: ${formatChangedFields(changes)}.`,
+    target: {
+      type: "edge",
+      id: currentEdge.id,
+    },
+    before: buildAuditChangeSnapshot(changes, "before"),
+    after: buildAuditChangeSnapshot(changes, "after"),
+    metadata: {
+      action: "owner_ui_metadata_edit",
+      fields: changes.map((change) => change.field),
+    },
+  });
+}
+
+function buildAuditChangeSnapshot(
+  changes: MetadataAuditChange[],
+  direction: "before" | "after",
+): Record<string, unknown> {
+  return Object.fromEntries(
+    changes.map((change) => [change.field, change[direction]]),
+  );
+}
+
+function formatChangedFields(changes: MetadataAuditChange[]): string {
+  return changes.map((change) => change.field).join(", ");
 }
 
 function formatTime(value: string): string {

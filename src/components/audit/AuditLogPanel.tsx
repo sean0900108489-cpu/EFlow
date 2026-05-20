@@ -76,8 +76,10 @@ function formatAuditEventType(
     manual_node_created: "auditLog.eventType.manualNodeCreated",
     manual_edge_created: "auditLog.eventType.manualEdgeCreated",
     ai_command_applied: "auditLog.eventType.aiCommandApplied",
+    node_metadata_changed: "auditLog.eventType.nodeMetadataChanged",
     node_review_status_changed: "auditLog.eventType.nodeReviewChanged",
     node_lifecycle_status_changed: "auditLog.eventType.nodeLifecycleChanged",
+    edge_metadata_changed: "auditLog.eventType.edgeMetadataChanged",
     edge_review_status_changed: "auditLog.eventType.edgeReviewChanged",
     edge_lifecycle_status_changed: "auditLog.eventType.edgeLifecycleChanged",
   };

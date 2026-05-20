@@ -13,6 +13,7 @@ import { useLanguage } from "../../lib/i18n/language-context";
 
 type EdgeInspectorProps = {
   edge: EngineeringEdge;
+  disabledRelationshipTypes?: RelationshipType[];
   onChange: (patch: Partial<EngineeringEdge>) => void;
 };
 
@@ -29,9 +30,14 @@ const relationshipTypes: RelationshipType[] = [
 
 const edgeStatuses: EdgeStatus[] = ["suggested", "confirmed", "rejected"];
 
-export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
+export function EdgeInspector({
+  edge,
+  disabledRelationshipTypes = [],
+  onChange,
+}: EdgeInspectorProps) {
   const { t } = useLanguage();
   const displayedLifecycleStatus = edge.lifecycleStatus ?? "planned";
+  const disabledRelationshipTypeSet = new Set(disabledRelationshipTypes);
 
   return (
     <section className="inspector-section">
@@ -61,7 +67,11 @@ export function EdgeInspector({ edge, onChange }: EdgeInspectorProps) {
           }
         >
           {relationshipTypes.map((type) => (
-            <option value={type} key={type}>
+            <option
+              value={type}
+              key={type}
+              disabled={type !== edge.relationshipType && disabledRelationshipTypeSet.has(type)}
+            >
               {t(relationshipTypeLabelKeys[type])}
             </option>
           ))}

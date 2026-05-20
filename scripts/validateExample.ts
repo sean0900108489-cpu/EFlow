@@ -145,6 +145,56 @@ const workspaceImportedAuditEvent = createAuditEvent({
     importedAuditEventCount: 1,
   },
 });
+const nodeMetadataAuditEvent = createAuditEvent({
+  createdAt: "2026-05-17T00:04:00.000Z",
+  actor: {
+    type: "human",
+    id: "local-user",
+    name: "Local user",
+  },
+  source: "manual_ui",
+  eventType: "node_metadata_changed",
+  summary: `Changed node "${graph.nodes[0].title}" metadata fields: title.`,
+  target: {
+    type: "node",
+    id: graph.nodes[0].id,
+  },
+  before: {
+    title: graph.nodes[0].title,
+  },
+  after: {
+    title: `${graph.nodes[0].title} updated`,
+  },
+  metadata: {
+    action: "owner_ui_metadata_edit",
+    fields: ["title"],
+  },
+});
+const edgeMetadataAuditEvent = createAuditEvent({
+  createdAt: "2026-05-17T00:05:00.000Z",
+  actor: {
+    type: "human",
+    id: "local-user",
+    name: "Local user",
+  },
+  source: "manual_ui",
+  eventType: "edge_metadata_changed",
+  summary: `Changed edge "${graph.edges[0].id}" metadata fields: description.`,
+  target: {
+    type: "edge",
+    id: graph.edges[0].id,
+  },
+  before: {
+    description: graph.edges[0].description,
+  },
+  after: {
+    description: `${graph.edges[0].description} updated`,
+  },
+  metadata: {
+    action: "owner_ui_metadata_edit",
+    fields: ["description"],
+  },
+});
 const workspaceWithAuditLog = buildWorkspaceDocument({
   input: todoThoughtUniverseExample,
   graph,
@@ -621,6 +671,14 @@ assert.ok(
   EFLOW_AUDIT_EVENT_TYPES.includes("workspace_imported"),
   "known audit event types should include workspace_imported",
 );
+assert.ok(
+  EFLOW_AUDIT_EVENT_TYPES.includes("node_metadata_changed"),
+  "known audit event types should include node_metadata_changed",
+);
+assert.ok(
+  EFLOW_AUDIT_EVENT_TYPES.includes("edge_metadata_changed"),
+  "known audit event types should include edge_metadata_changed",
+);
 assert.equal(graphGeneratedAuditEvent.schemaVersion, EFLOW_AUDIT_SCHEMA_VERSION);
 assert.equal(graphGeneratedAuditEvent.eventType, "graph_generated");
 assert.equal(graphGeneratedAuditEvent.target?.type, "graph");
@@ -729,6 +787,11 @@ assert.deepEqual(
   { ok: true, errors: [] },
   "valid auditLog should pass detailed audit validation",
 );
+assert.deepEqual(
+  validateEFlowAuditLog([nodeMetadataAuditEvent, edgeMetadataAuditEvent]),
+  { ok: true, errors: [] },
+  "metadata edit audit events should pass detailed audit validation",
+);
 const missingAuditLogWorkspace = {
   ...workspaceWithAuditLog,
 } as Record<string, unknown>;
@@ -827,9 +890,211 @@ assert.equal(
   false,
   "workspace validation should reject invalid edge lifecycleStatus",
 );
+const missingNodeConfidenceWorkspace = structuredClone(workspace);
+if (missingNodeConfidenceWorkspace.engineeringFlowGraph) {
+  delete (missingNodeConfidenceWorkspace.engineeringFlowGraph.nodes[0] as { confidence?: number })
+    .confidence;
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(missingNodeConfidenceWorkspace).errors.some((error) =>
+    error.includes("missing confidence"),
+  ),
+  "workspace validation should reject missing node confidence",
+);
+const invalidNodeConfidenceWorkspace = structuredClone(workspace);
+if (invalidNodeConfidenceWorkspace.engineeringFlowGraph) {
+  invalidNodeConfidenceWorkspace.engineeringFlowGraph.nodes[0] = {
+    ...invalidNodeConfidenceWorkspace.engineeringFlowGraph.nodes[0],
+    confidence: 1.5,
+  };
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(invalidNodeConfidenceWorkspace).errors.some((error) =>
+    error.includes("invalid confidence"),
+  ),
+  "workspace validation should reject invalid node confidence",
+);
+const missingNodeProvenanceWorkspace = structuredClone(workspace);
+if (missingNodeProvenanceWorkspace.engineeringFlowGraph) {
+  delete (missingNodeProvenanceWorkspace.engineeringFlowGraph.nodes[0] as {
+    provenance?: unknown;
+  }).provenance;
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(missingNodeProvenanceWorkspace).errors.some((error) =>
+    error.includes("missing provenance"),
+  ),
+  "workspace validation should reject missing node provenance",
+);
+const invalidNodeProvenanceWorkspace = structuredClone(workspace);
+if (invalidNodeProvenanceWorkspace.engineeringFlowGraph) {
+  invalidNodeProvenanceWorkspace.engineeringFlowGraph.nodes[0] = {
+    ...invalidNodeProvenanceWorkspace.engineeringFlowGraph.nodes[0],
+    provenance: {
+      sourceType: "unknown_source",
+    },
+  } as unknown as typeof invalidNodeProvenanceWorkspace.engineeringFlowGraph.nodes[number];
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(invalidNodeProvenanceWorkspace).errors.some((error) =>
+    error.includes("provenance.sourceType"),
+  ),
+  "workspace validation should reject invalid node provenance sourceType",
+);
+const missingEdgeConfidenceWorkspace = structuredClone(workspace);
+if (missingEdgeConfidenceWorkspace.engineeringFlowGraph) {
+  delete (missingEdgeConfidenceWorkspace.engineeringFlowGraph.edges[0] as { confidence?: number })
+    .confidence;
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(missingEdgeConfidenceWorkspace).errors.some((error) =>
+    error.includes("missing confidence"),
+  ),
+  "workspace validation should reject missing edge confidence",
+);
+const invalidEdgeConfidenceWorkspace = structuredClone(workspace);
+if (invalidEdgeConfidenceWorkspace.engineeringFlowGraph) {
+  invalidEdgeConfidenceWorkspace.engineeringFlowGraph.edges[0] = {
+    ...invalidEdgeConfidenceWorkspace.engineeringFlowGraph.edges[0],
+    confidence: -0.1,
+  };
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(invalidEdgeConfidenceWorkspace).errors.some((error) =>
+    error.includes("invalid confidence"),
+  ),
+  "workspace validation should reject invalid edge confidence",
+);
+const missingEdgeProvenanceWorkspace = structuredClone(workspace);
+if (missingEdgeProvenanceWorkspace.engineeringFlowGraph) {
+  delete (missingEdgeProvenanceWorkspace.engineeringFlowGraph.edges[0] as {
+    provenance?: unknown;
+  }).provenance;
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(missingEdgeProvenanceWorkspace).errors.some((error) =>
+    error.includes("missing provenance"),
+  ),
+  "workspace validation should reject missing edge provenance",
+);
+const invalidEdgeProvenanceWorkspace = structuredClone(workspace);
+if (invalidEdgeProvenanceWorkspace.engineeringFlowGraph) {
+  invalidEdgeProvenanceWorkspace.engineeringFlowGraph.edges[0] = {
+    ...invalidEdgeProvenanceWorkspace.engineeringFlowGraph.edges[0],
+    provenance: {
+      sourceType: "manual_edit",
+      sourceInputIds: ["source-a", 2],
+    },
+  } as unknown as typeof invalidEdgeProvenanceWorkspace.engineeringFlowGraph.edges[number];
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(invalidEdgeProvenanceWorkspace).errors.some((error) =>
+    error.includes("provenance.sourceInputIds"),
+  ),
+  "workspace validation should reject structurally invalid edge provenance",
+);
+const duplicateNodeWorkspace = structuredClone(workspace);
+if (duplicateNodeWorkspace.engineeringFlowGraph) {
+  duplicateNodeWorkspace.engineeringFlowGraph.nodes.push({
+    ...duplicateNodeWorkspace.engineeringFlowGraph.nodes[0],
+  });
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(duplicateNodeWorkspace).errors.some((error) =>
+    error.includes("duplicate id"),
+  ),
+  "workspace validation should reject duplicate node ids",
+);
+const duplicateEdgeIdWorkspace = structuredClone(workspace);
+if (duplicateEdgeIdWorkspace.engineeringFlowGraph) {
+  duplicateEdgeIdWorkspace.engineeringFlowGraph.edges.push({
+    ...duplicateEdgeIdWorkspace.engineeringFlowGraph.edges[0],
+    source: graph.nodes[0].id,
+    target: graph.nodes[1].id,
+    relationshipType: "relates_to",
+  });
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(duplicateEdgeIdWorkspace).errors.some((error) =>
+    error.includes("duplicate id"),
+  ),
+  "workspace validation should reject duplicate edge ids",
+);
+const selfEdgeWorkspace = structuredClone(workspace);
+if (selfEdgeWorkspace.engineeringFlowGraph) {
+  selfEdgeWorkspace.engineeringFlowGraph.edges.push({
+    ...selfEdgeWorkspace.engineeringFlowGraph.edges[0],
+    id: "edge-validation-self",
+    source: graph.nodes[0].id,
+    target: graph.nodes[0].id,
+  });
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(selfEdgeWorkspace).errors.some((error) =>
+    error.includes("cannot reference itself"),
+  ),
+  "workspace validation should reject self-edges",
+);
+const duplicateRelationshipWorkspace = structuredClone(workspace);
+if (duplicateRelationshipWorkspace.engineeringFlowGraph) {
+  duplicateRelationshipWorkspace.engineeringFlowGraph.edges.push({
+    ...duplicateRelationshipWorkspace.engineeringFlowGraph.edges[0],
+    id: "edge-validation-duplicate-relationship",
+  });
+}
+assert.ok(
+  validateEFlowWorkspaceDocument(duplicateRelationshipWorkspace).errors.some((error) =>
+    error.includes("duplicates relationship"),
+  ),
+  "workspace validation should reject duplicate exact relationships",
+);
 
 const targetNodeId = graph.nodes[0].id;
 const targetEdge = graph.edges[0];
+const reviewOnlyCommand: EFlowCommandEnvelope = {
+  schemaVersion: "eflow-command/v0.1",
+  commandId: "cmd_validate_review_only_update",
+  projectId: todoThoughtUniverseExample.id,
+  graphId: graph.id,
+  createdAt: "2026-05-17T00:00:00.000Z",
+  actor: {
+    type: "ai_agent",
+    id: "codex",
+    name: "Codex",
+  },
+  intent: "review_sync",
+  mode: "apply",
+  operations: [
+    {
+      op: "updateNode",
+      id: targetNodeId,
+      patch: {
+        reviewStatus: "confirmed",
+      },
+      reason: "Validate review-only node update.",
+    },
+    {
+      op: "updateEdge",
+      id: targetEdge.id,
+      patch: {
+        reviewStatus: "confirmed",
+      },
+      reason: "Validate review-only edge update.",
+    },
+  ],
+};
+const reviewOnlyApplyResult = applyEFlowCommandToGraph(graph, reviewOnlyCommand);
+assert.ok(reviewOnlyApplyResult.ok, "review-only update command should succeed");
+assert.equal(
+  reviewOnlyApplyResult.graph.nodes.find((node) => node.id === targetNodeId)?.lifecycleStatus,
+  undefined,
+  "review-only updateNode should not write a derived lifecycleStatus default",
+);
+assert.equal(
+  reviewOnlyApplyResult.graph.edges.find((edge) => edge.id === targetEdge.id)?.lifecycleStatus,
+  undefined,
+  "review-only updateEdge should not write a derived lifecycleStatus default",
+);
 const updateCommand: EFlowCommandEnvelope = {
   schemaVersion: "eflow-command/v0.1",
   commandId: "cmd_validate_node_completed",
@@ -1380,6 +1645,36 @@ assert.equal(invalidLifecycleResult.ok, false, "invalid lifecycleStatus should f
 assert.ok(
   invalidLifecycleResult.errors.some((error) => error.code === "operation.invalid_lifecycle_status"),
   "invalid lifecycleStatus should report operation.invalid_lifecycle_status",
+);
+const invalidProvenanceCommand = {
+  ...updateCommand,
+  commandId: "cmd_validate_invalid_provenance_source",
+  operations: [
+    {
+      op: "updateNode",
+      id: targetNodeId,
+      patch: {
+        provenance: {
+          sourceType: "unknown_source",
+        },
+      },
+    },
+  ],
+} as unknown;
+const invalidProvenanceResult = validateEFlowCommandEnvelope(invalidProvenanceCommand);
+assert.equal(invalidProvenanceResult.ok, false, "invalid provenance sourceType should fail validation");
+assert.ok(
+  invalidProvenanceResult.errors.some((error) => error.code === "provenance.invalid_source_type"),
+  "invalid provenance sourceType should report provenance.invalid_source_type",
+);
+const invalidProvenanceApplyResult = applyEFlowCommandToGraph(
+  graph,
+  invalidProvenanceCommand as EFlowCommandEnvelope,
+);
+assert.equal(
+  invalidProvenanceApplyResult.ok,
+  false,
+  "apply should reject invalid provenance sourceType during command validation",
 );
 
 console.log(
