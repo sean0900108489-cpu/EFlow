@@ -6,17 +6,17 @@ EFlow 會把 structured project intent 轉成 deterministic、reviewable、edita
 
 ## 目前狀態
 
-EFlow 目前是 frontend-only local-first app：
+EFlow 目前是 local-first Vite/React app，另有一個 optional AI Chat serverless route：
 
 - 使用 Vite、React、TypeScript、`@xyflow/react`、plain CSS 和 browser `localStorage`。
 - Workspace state 儲存在 browser。
 - 支援 Structured Input、deterministic graph generation、manual graph editing、review queue、lifecycle tracking、audit log、Workspace JSON export/import。
 - 支援 `eflow-context/v0.1` AI-native context export。
 - 支援 `eflow-command/v0.1` Local Command Import，workflow 是 Validate -> Dry Run -> Apply。
-- 包含 optional AI Collaboration Console，使用 personal BYOK direct-browser request path。
-- 沒有 backend、database、auth、cloud sync、backend/proxy/cloud AI service、MCP server、REST API、CLI、repo analyzer 或 autonomous agent execution。
+- 包含 optional AI Collaboration Console，聊天請求會送到 `/api/chat-with-files`，再由後端呼叫 OpenAI Responses / Files API。
+- 沒有 database、auth、cloud sync、MCP server、CLI、repo analyzer 或 autonomous agent execution。
 
-AI Chat 是 optional，而且 draft-only。Local-first 不代表你選擇附加的 Full EFlow Context 永遠不會離開 browser；在 AI Console 選 Summary 或 Full context 並送出時，context 會送到你設定的 provider。
+AI Chat 是 optional，而且 draft-only。Local-first 不代表你選擇附加的 Full EFlow Context 永遠不會離開 browser；在 AI Console 選 Summary 或 Full context 並送出時，context 會送到 `/api/chat-with-files`，再送往 OpenAI。
 
 ## Owner Workflow
 
@@ -212,8 +212,8 @@ EFlow 目前可作為 static Vite app deployment。`npm run build` 會執行 Typ
 Deployment notes：
 
 - 適合 Vercel、Netlify 或 GitHub Pages static hosting。
-- Current app 不需要 backend、database、auth service、cloud sync、backend AI service、MCP server、REST API 或 CLI。
-- 目前 frontend-only build 不需要 backend environment variables。
+- Core workspace 不需要 database、auth service、cloud sync、MCP server、REST API 或 CLI。
+- Optional AI Chat 需要 `/api/chat-with-files` serverless route；使用者未在 UI 輸入 API key 時，route 會 fallback 讀取 `OPENAI_API_KEY` environment variable。
 - Workspace data 會儲存在 browser `localStorage`。
 - 部署成 static site 後，workspace data 仍是 browser-local，不會跨 browsers、devices 或 users sync。
 - Live demo URL：pending。

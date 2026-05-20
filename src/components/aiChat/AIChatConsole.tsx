@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   AI_CHAT_CONTEXT_ATTACHMENT_MODES,
   AI_CHAT_PROMPT_MODES,
@@ -13,9 +13,12 @@ import type { TranslationKey, TranslationValues } from "../../lib/i18n/types";
 import { buildEFlowContextExport } from "../../lib/buildEflowContextExport";
 import type { EngineeringFlowGraph, EngineeringFlowInput } from "../../types/engineeringFlow";
 
-const DEFAULT_BASE_URL = "https://api.openai.com/v1/responses";
+const CHAT_WITH_FILES_ENDPOINT = "/api/chat-with-files";
 const DEFAULT_MODEL = "gpt-5.5-pro";
 const API_KEY_STORAGE_KEY = "eflow.aiChat.apiKey";
+const ATTACHMENT_ACCEPT = ".json,.txt,.md,.pdf,.png";
+const MAX_ATTACHMENT_SIZE_BYTES = 20 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set([".json", ".txt", ".md", ".pdf", ".png"]);
 
 type AIChatConsoleProps = {
   input: EngineeringFlowInput;
@@ -45,7 +48,6 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const [apiKey, setApiKey] = useState(storedApiKey);
   const [rememberKey, setRememberKey] = useState(storedApiKey.length > 0);
   const [model, setModel] = useState(DEFAULT_MODEL);
-  const [baseUrl, setBaseUrl] = useState(DEFAULT_BASE_URL);
   const [previousResponseId, setPreviousResponseId] = useState("");
   const [latestResponseId, setLatestResponseId] = useState("");
   const [autoContinueWithLatestResponseId, setAutoContinueWithLatestResponseId] = useState(false);
@@ -55,11 +57,13 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const [draftMessage, setDraftMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ type: "info" | "error"; text: string } | null>(
     null,
   );
   const [isCollapsed, setIsCollapsed] = useState(false);
   const messageListRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const eflowContextJson = useMemo(() => {
     if (!graph) return "";
@@ -86,7 +90,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const contextCharCount = selectedContextText.length;
   const contextTokenEstimate = estimateTokenCount(contextCharCount);
   const latestAssistantMessage = getLatestAssistantMessage(chatMessages);
-  const canSend = draftMessage.trim().length > 0 && !isSending;
+  const canSend = (draftMessage.trim().length > 0 || attachments.length > 0) && !isSending;
   const promptModeNote = getPromptModeNote(promptMode, t);
   const composedPromptPreview = useMemo(() => {
     const prompt = buildAIChatPrompt({
@@ -120,26 +124,16 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     const userContent = draftMessage.trim();
     const trimmedApiKey = apiKey.trim();
     const trimmedModel = model.trim();
-    const trimmedBaseUrl = baseUrl.trim();
     const trimmedPreviousResponseId = previousResponseId.trim();
+    const filesForRequest = [...attachments];
 
-    if (!userContent) {
+    if (!userContent && filesForRequest.length === 0) {
       setStatusMessage({ type: "error", text: t("aiChat.error.emptyMessage") });
-      return;
-    }
-
-    if (!trimmedApiKey) {
-      setStatusMessage({ type: "error", text: t("aiChat.error.missingApiKey") });
       return;
     }
 
     if (!trimmedModel) {
       setStatusMessage({ type: "error", text: t("aiChat.error.missingModel") });
-      return;
-    }
-
-    if (!isValidUrl(trimmedBaseUrl)) {
-      setStatusMessage({ type: "error", text: t("aiChat.error.invalidBaseUrl") });
       return;
     }
 
@@ -161,33 +155,24 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     const userMessage: ChatMessage = {
       id: createMessageId("user"),
       role: "user",
-      content: userContent,
+      content: formatUserMessageContent(userContent, filesForRequest, t),
       createdAt: new Date().toISOString(),
     };
-    const requestInput: ProviderInputMessage[] = [
-      {
-        role: "system",
-        content: prompt.systemPrompt,
-      },
-      ...historyForRequest,
-      {
-        role: "user",
-        content: prompt.userPrompt,
-      },
-    ];
 
     setChatMessages((currentMessages) => [...currentMessages, userMessage]);
-    setDraftMessage("");
     setStatusMessage(null);
     setIsSending(true);
 
     try {
-      const responsePayload = await postDirectProviderRequest({
+      const responsePayload = await postChatWithFilesRequest({
         apiKey: trimmedApiKey,
-        baseUrl: trimmedBaseUrl,
         model: trimmedModel,
-        input: requestInput,
+        message: prompt.userPrompt,
+        systemPrompt: prompt.systemPrompt,
+        history: historyForRequest,
+        projectState: selectedContextText,
         previousResponseId: trimmedPreviousResponseId || undefined,
+        files: filesForRequest,
         t,
       });
       const assistantText = extractAssistantText(responsePayload, t);
@@ -214,6 +199,11 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
               })
             : t("aiChat.status.responseReceived"),
       });
+      setDraftMessage("");
+      setAttachments([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (error) {
       const errorText = formatProviderError(error, t);
       setStatusMessage({ type: "error", text: errorText });
@@ -301,6 +291,55 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
     setStatusMessage({ type: "info", text: t("aiChat.status.previousResponseIdCleared") });
   }
 
+  function openAttachmentPicker() {
+    fileInputRef.current?.click();
+  }
+
+  function handleAttachmentChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    if (selectedFiles.length === 0) return;
+
+    const validFiles: File[] = [];
+    const validationErrors: string[] = [];
+
+    for (const file of selectedFiles) {
+      const extension = getFileExtension(file.name);
+
+      if (!ALLOWED_ATTACHMENT_EXTENSIONS.has(extension)) {
+        validationErrors.push(t("aiChat.attachments.error.invalidType", { name: file.name }));
+        continue;
+      }
+
+      if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+        validationErrors.push(t("aiChat.attachments.error.tooLarge", { name: file.name }));
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length > 0) {
+      setAttachments((currentAttachments) => [...currentAttachments, ...validFiles]);
+    }
+
+    if (validationErrors.length > 0) {
+      setStatusMessage({ type: "error", text: validationErrors.join("\n") });
+    } else {
+      setStatusMessage({
+        type: "info",
+        text: t("aiChat.attachments.status.added", { count: validFiles.length.toLocaleString() }),
+      });
+    }
+
+    event.target.value = "";
+  }
+
+  function removeAttachment(indexToRemove: number) {
+    setAttachments((currentAttachments) =>
+      currentAttachments.filter((_, index) => index !== indexToRemove),
+    );
+  }
+
   return (
     <section
       className={`ai-chat-console ${isCollapsed ? "is-collapsed" : ""}`}
@@ -336,15 +375,6 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
       {!isCollapsed ? (
         <div className="ai-chat-console-body">
           <div className="ai-chat-config-grid">
-            <label className="field">
-              <span>{t("aiChat.settings.baseUrl")}</span>
-              <input
-                type="url"
-                value={baseUrl}
-                onChange={(event) => setBaseUrl(event.target.value)}
-                placeholder={DEFAULT_BASE_URL}
-              />
-            </label>
             <label className="field">
               <span>{t("aiChat.settings.model")}</span>
               <input
@@ -545,6 +575,43 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
                 placeholder={t("aiChat.composer.placeholder")}
                 aria-label={t("aiChat.composer.ariaLabel")}
               />
+              <input
+                ref={fileInputRef}
+                className="ai-chat-file-input"
+                type="file"
+                multiple
+                accept={ATTACHMENT_ACCEPT}
+                onChange={handleAttachmentChange}
+              />
+              <div className="ai-chat-attachment-toolbar">
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={openAttachmentPicker}
+                  disabled={isSending}
+                >
+                  {t("aiChat.attachments.add")}
+                </button>
+                <span>{t("aiChat.attachments.helper")}</span>
+              </div>
+              {attachments.length > 0 ? (
+                <div className="ai-chat-attachment-chips" aria-live="polite">
+                  {attachments.map((file, index) => (
+                    <span className="ai-chat-attachment-chip" key={`${file.name}-${file.size}-${index}`}>
+                      <span className="ai-chat-attachment-name">{file.name}</span>
+                      <span className="ai-chat-attachment-size">{formatFileSize(file.size)}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        disabled={isSending}
+                        aria-label={t("aiChat.attachments.removeAria", { name: file.name })}
+                      >
+                        {t("aiChat.attachments.remove")}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <div className="ai-chat-actions">
                 <button
                   className="button button-primary"
@@ -600,40 +667,60 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   );
 }
 
-async function postDirectProviderRequest({
+async function postChatWithFilesRequest({
   apiKey,
-  baseUrl,
   model,
-  input,
+  message,
+  systemPrompt,
+  history,
+  projectState,
   previousResponseId,
+  files,
   t,
 }: {
   apiKey: string;
-  baseUrl: string;
   model: string;
-  input: ProviderInputMessage[];
+  message: string;
+  systemPrompt: string;
+  history: ProviderInputMessage[];
+  projectState: string;
   previousResponseId?: string;
+  files: File[];
   t: Translate;
 }): Promise<unknown> {
   let response: Response;
-  const requestBody = {
-    model,
-    input,
-    ...(previousResponseId ? { previous_response_id: previousResponseId } : {}),
-  };
+  const formData = new FormData();
+  formData.append("message", message);
+  formData.append("model", model);
+  formData.append("apiKey", apiKey);
+  formData.append("systemPrompt", systemPrompt);
+
+  if (projectState) {
+    formData.append("projectState", projectState);
+  }
+
+  if (history.length > 0) {
+    const historyJson = JSON.stringify(history);
+    formData.append("history", historyJson);
+    formData.append("conversation", historyJson);
+  }
+
+  if (previousResponseId) {
+    formData.append("previousResponseId", previousResponseId);
+  }
+
+  for (const file of files) {
+    formData.append("files", file, file.name);
+  }
 
   try {
-    response = await fetch(baseUrl, {
+    response = await fetch(CHAT_WITH_FILES_ENDPOINT, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
+      body: formData,
     });
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(t("aiChat.error.networkOrCors"));
+      throw new Error(t("aiChat.error.networkOrBackend"));
     }
 
     throw error;
@@ -651,6 +738,9 @@ async function postDirectProviderRequest({
 
 function extractProviderResponseId(payload: unknown): string | null {
   if (!isRecord(payload)) return null;
+  if (typeof payload.responseId === "string" && payload.responseId.trim()) {
+    return payload.responseId;
+  }
   return typeof payload.id === "string" && payload.id.trim() ? payload.id : null;
 }
 
@@ -660,6 +750,10 @@ function extractAssistantText(payload: unknown, t: Translate): string {
   }
 
   if (isRecord(payload)) {
+    if (typeof payload.outputText === "string" && payload.outputText.trim()) {
+      return payload.outputText;
+    }
+
     if (typeof payload.output_text === "string" && payload.output_text.trim()) {
       return payload.output_text;
     }
@@ -707,7 +801,7 @@ function extractContentText(value: unknown): string[] {
 
 function buildHttpErrorMessage(response: Response, payload: unknown, t: Translate): string {
   const providerMessage = extractProviderErrorMessage(payload);
-  const prefix = t("aiChat.error.providerHttp", {
+  const prefix = t("aiChat.error.backendHttp", {
     status: response.status,
     statusText: response.statusText ? ` ${response.statusText}` : "",
   });
@@ -763,6 +857,42 @@ function formatMessageTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatUserMessageContent(message: string, files: File[], t: Translate): string {
+  const trimmedMessage = message.trim();
+  if (files.length === 0) return trimmedMessage;
+
+  const fileLines = files.map((file) => `- ${file.name} (${formatFileSize(file.size)})`);
+  return [
+    trimmedMessage || t("aiChat.attachments.onlyFilesMessage"),
+    `${t("aiChat.attachments.sentFiles")}:`,
+    fileLines.join("\n"),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function formatFileSize(sizeInBytes: number): string {
+  if (sizeInBytes < 1024) return `${sizeInBytes} B`;
+
+  const units = ["KB", "MB", "GB"];
+  let size = sizeInBytes / 1024;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+}
+
+function getFileExtension(fileName: string): string {
+  const extensionStart = fileName.lastIndexOf(".");
+  if (extensionStart < 0) return "";
+
+  return fileName.slice(extensionStart).toLowerCase();
 }
 
 function estimateTokenCount(characterCount: number): number {
@@ -833,20 +963,12 @@ function getPromptModeNote(mode: AIChatPromptMode, t: Translate): string {
   }
 }
 
-function isValidUrl(value: string): boolean {
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function readStoredApiKey(): string {
   if (typeof window === "undefined") return "";
 
   try {
-    return window.localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
+    clearLegacyLocalStorageApiKey();
+    return window.sessionStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
   } catch {
     return "";
   }
@@ -856,14 +978,26 @@ function writeStoredApiKey(apiKey: string) {
   if (typeof window === "undefined") return;
 
   try {
+    clearLegacyLocalStorageApiKey();
+
     if (apiKey) {
-      window.localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+      window.sessionStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
       return;
     }
 
+    window.sessionStorage.removeItem(API_KEY_STORAGE_KEY);
+  } catch {
+    // Browser storage can be disabled in private or locked-down contexts.
+  }
+}
+
+function clearLegacyLocalStorageApiKey() {
+  if (typeof window === "undefined") return;
+
+  try {
     window.localStorage.removeItem(API_KEY_STORAGE_KEY);
   } catch {
-    // localStorage can be disabled in private or locked-down browser contexts.
+    // Best-effort cleanup for older builds that stored the key in localStorage.
   }
 }
 
