@@ -13,6 +13,8 @@
 - Added OpenAI Files API upload handling before Responses API calls.
 - Added response extraction helper for Responses API output text.
 - Added safer API-key redaction for backend error responses.
+- Added recommended AI chat model selection with an advanced custom model ID option.
+- Added a backend-powered AI chat model test action that checks the selected model without attachments or EFlow context.
 
 ### Changed
 
@@ -24,6 +26,7 @@
 - Frontend no longer calls OpenAI directly.
 - API key handling changed from `localStorage` to React state, with optional `sessionStorage` only.
 - The backend now chooses the API key from the submitted form first, then falls back to `process.env.OPENAI_API_KEY`.
+- AI chat defaults to `gpt-5.5` and returns structured `INVALID_MODEL` errors when OpenAI rejects the selected model.
 - README now documents that optional AI Chat uses a backend serverless route.
 
 ### Preserved

@@ -14,7 +14,15 @@ import { buildEFlowContextExport } from "../../lib/buildEflowContextExport";
 import type { EngineeringFlowGraph, EngineeringFlowInput } from "../../types/engineeringFlow";
 
 const CHAT_WITH_FILES_ENDPOINT = "/api/chat-with-files";
-const DEFAULT_MODEL = "gpt-5.5-pro";
+const DEFAULT_MODEL = "gpt-5.5";
+const CUSTOM_MODEL_OPTION_VALUE = "__custom_model__";
+const RECOMMENDED_MODELS = [
+  { id: "gpt-5.5", label: "gpt-5.5" },
+  { id: "gpt-5.4", label: "gpt-5.4" },
+  { id: "gpt-5.4-mini", label: "gpt-5.4-mini" },
+  { id: "gpt-5.4-nano", label: "gpt-5.4-nano" },
+] as const;
+const RECOMMENDED_MODEL_IDS = new Set<string>(RECOMMENDED_MODELS.map((recommendedModel) => recommendedModel.id));
 const API_KEY_STORAGE_KEY = "eflow.aiChat.apiKey";
 const ATTACHMENT_ACCEPT = ".json,.txt,.md,.pdf,.png";
 const MAX_ATTACHMENT_SIZE_BYTES = 20 * 1024 * 1024;
@@ -48,6 +56,7 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const [apiKey, setApiKey] = useState(storedApiKey);
   const [rememberKey, setRememberKey] = useState(storedApiKey.length > 0);
   const [model, setModel] = useState(DEFAULT_MODEL);
+  const [isTestingModel, setIsTestingModel] = useState(false);
   const [previousResponseId, setPreviousResponseId] = useState("");
   const [latestResponseId, setLatestResponseId] = useState("");
   const [autoContinueWithLatestResponseId, setAutoContinueWithLatestResponseId] = useState(false);
@@ -90,7 +99,11 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
   const contextCharCount = selectedContextText.length;
   const contextTokenEstimate = estimateTokenCount(contextCharCount);
   const latestAssistantMessage = getLatestAssistantMessage(chatMessages);
-  const canSend = (draftMessage.trim().length > 0 || attachments.length > 0) && !isSending;
+  const canSend =
+    (draftMessage.trim().length > 0 || attachments.length > 0) && !isSending && !isTestingModel;
+  const modelSelectionValue = getModelSelectionValue(model);
+  const isCustomModel = modelSelectionValue === CUSTOM_MODEL_OPTION_VALUE;
+  const canTestModel = model.trim().length > 0 && !isSending && !isTestingModel;
   const promptModeNote = getPromptModeNote(promptMode, t);
   const composedPromptPreview = useMemo(() => {
     const prompt = buildAIChatPrompt({
@@ -219,6 +232,46 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
       ]);
     } finally {
       setIsSending(false);
+    }
+  }
+
+  function handleModelSelectionChange(selectedModel: string) {
+    if (selectedModel === CUSTOM_MODEL_OPTION_VALUE) {
+      if (!isCustomModel) {
+        setModel("");
+      }
+      return;
+    }
+
+    setModel(selectedModel);
+  }
+
+  async function testSelectedModel() {
+    const trimmedApiKey = apiKey.trim();
+    const trimmedModel = model.trim();
+
+    if (!trimmedModel) {
+      setStatusMessage({ type: "error", text: t("aiChat.error.missingModel") });
+      return;
+    }
+
+    setStatusMessage(null);
+    setIsTestingModel(true);
+
+    try {
+      const responsePayload = await postModelTestRequest({
+        apiKey: trimmedApiKey,
+        model: trimmedModel,
+        t,
+      });
+      setStatusMessage({
+        type: "info",
+        text: extractModelTestMessage(responsePayload, t),
+      });
+    } catch (error) {
+      setStatusMessage({ type: "error", text: formatProviderError(error, t) });
+    } finally {
+      setIsTestingModel(false);
     }
   }
 
@@ -377,13 +430,45 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
           <div className="ai-chat-config-grid">
             <label className="field">
               <span>{t("aiChat.settings.model")}</span>
-              <input
-                type="text"
-                value={model}
-                onChange={(event) => setModel(event.target.value)}
-                placeholder={DEFAULT_MODEL}
-              />
+              <div className="ai-chat-model-row">
+                <select
+                  value={modelSelectionValue}
+                  onChange={(event) => handleModelSelectionChange(event.target.value)}
+                >
+                  {RECOMMENDED_MODELS.map((recommendedModel) => (
+                    <option key={recommendedModel.id} value={recommendedModel.id}>
+                      {recommendedModel.label}
+                      {recommendedModel.id === DEFAULT_MODEL
+                        ? ` (${t("aiChat.settings.modelDefault")})`
+                        : ""}
+                    </option>
+                  ))}
+                  <option value={CUSTOM_MODEL_OPTION_VALUE}>
+                    {t("aiChat.settings.modelCustomOption")}
+                  </option>
+                </select>
+                <button
+                  className="mini-button ai-chat-model-test-button"
+                  type="button"
+                  onClick={() => void testSelectedModel()}
+                  disabled={!canTestModel}
+                >
+                  {isTestingModel ? t("aiChat.actions.testingModel") : t("aiChat.actions.testModel")}
+                </button>
+              </div>
             </label>
+            {isCustomModel ? (
+              <label className="field">
+                <span>{t("aiChat.settings.customModel")}</span>
+                <input
+                  type="text"
+                  value={model}
+                  onChange={(event) => setModel(event.target.value)}
+                  placeholder={t("aiChat.settings.customModelPlaceholder")}
+                  autoComplete="off"
+                />
+              </label>
+            ) : null}
             <label className="field">
               <span>{t("aiChat.settings.apiKey")}</span>
               <input
@@ -408,6 +493,10 @@ export function AIChatConsole({ input, graph }: AIChatConsoleProps) {
             <p>
               {t("aiChat.settings.helper.apiKey", { storageKey: API_KEY_STORAGE_KEY })}
             </p>
+            <p>{t("aiChat.settings.helper.modelSelection")}</p>
+            {isCustomModel ? (
+              <p className="ai-chat-warning">{t("aiChat.settings.helper.customModel")}</p>
+            ) : null}
             <p>{t("aiChat.settings.helper.modelDraft")}</p>
           </div>
 
@@ -736,6 +825,52 @@ async function postChatWithFilesRequest({
   return responsePayload;
 }
 
+async function postModelTestRequest({
+  apiKey,
+  model,
+  t,
+}: {
+  apiKey: string;
+  model: string;
+  t: Translate;
+}): Promise<unknown> {
+  let response: Response;
+  const formData = new FormData();
+  formData.append("requestMode", "model_test");
+  formData.append("model", model);
+  formData.append("apiKey", apiKey);
+
+  try {
+    response = await fetch(CHAT_WITH_FILES_ENDPOINT, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(t("aiChat.error.networkOrBackend"));
+    }
+
+    throw error;
+  }
+
+  const responseText = await response.text();
+  const responsePayload = parseProviderPayload(responseText);
+
+  if (!response.ok) {
+    throw new Error(buildHttpErrorMessage(response, responsePayload, t));
+  }
+
+  return responsePayload;
+}
+
+function extractModelTestMessage(payload: unknown, t: Translate): string {
+  if (!isRecord(payload)) return t("aiChat.status.modelTestUsable");
+
+  return typeof payload.message === "string" && payload.message.trim()
+    ? payload.message
+    : t("aiChat.status.modelTestUsable");
+}
+
 function extractProviderResponseId(payload: unknown): string | null {
   if (!isRecord(payload)) return null;
   if (typeof payload.responseId === "string" && payload.responseId.trim()) {
@@ -800,6 +935,11 @@ function extractContentText(value: unknown): string[] {
 }
 
 function buildHttpErrorMessage(response: Response, payload: unknown, t: Translate): string {
+  const backendError = extractBackendError(payload);
+  if (backendError) {
+    return backendError.code ? `${backendError.message}（${backendError.code}）` : backendError.message;
+  }
+
   const providerMessage = extractProviderErrorMessage(payload);
   const prefix = t("aiChat.error.backendHttp", {
     status: response.status,
@@ -808,11 +948,24 @@ function buildHttpErrorMessage(response: Response, payload: unknown, t: Translat
   return providerMessage ? `${prefix} ${providerMessage}` : prefix;
 }
 
+function extractBackendError(payload: unknown): { code: string; message: string } | null {
+  if (!isRecord(payload)) return null;
+
+  const message = typeof payload.message === "string" ? payload.message.trim() : "";
+  const code = typeof payload.code === "string" ? payload.code.trim() : "";
+  const isStructuredError = payload.ok === false || Boolean(code);
+
+  if (!isStructuredError || !message) return null;
+
+  return { code, message };
+}
+
 function extractProviderErrorMessage(payload: unknown): string {
   if (typeof payload === "string") return payload.slice(0, 600);
   if (!isRecord(payload)) return "";
 
   if (typeof payload.message === "string") return payload.message;
+  if (typeof payload.error === "string") return payload.error;
   if (isRecord(payload.error)) {
     if (typeof payload.error.message === "string") return payload.error.message;
     if (typeof payload.error.type === "string") return payload.error.type;
@@ -961,6 +1114,10 @@ function getPromptModeNote(mode: AIChatPromptMode, t: Translate): string {
       return exhaustiveCheck;
     }
   }
+}
+
+function getModelSelectionValue(model: string): string {
+  return RECOMMENDED_MODEL_IDS.has(model.trim()) ? model.trim() : CUSTOM_MODEL_OPTION_VALUE;
 }
 
 function readStoredApiKey(): string {

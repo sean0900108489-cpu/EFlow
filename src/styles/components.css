@@ -3338,6 +3338,18 @@
   gap: 12px;
 }
 
+.ai-chat-model-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-chat-model-test-button {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
 .ai-chat-prompt-grid {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) minmax(230px, 0.72fr) minmax(230px, 0.8fr);

@@ -2,7 +2,7 @@
 
 ## Summary
 
-EFlow currently has restored governance documentation and two completed source-level architecture gap fix passes. Several implementation behaviors are now source-verified, but full architecture verification is still ongoing. The working tree contains modified and untracked files from the governance and source fix work, so the repository should not be treated as clean until a fresh `git status -sb` confirms it.
+EFlow currently has restored governance documentation, two completed source-level architecture gap fix passes, and a narrow AI chat model UX/diagnostics update. Several implementation behaviors are now source-verified, but full architecture verification is still ongoing. The working tree contains modified files from the governance, source fix, and AI chat work, so the repository should not be treated as clean until a fresh `git status -sb` confirms it.
 
 ## Repository Path
 
@@ -70,6 +70,14 @@ This is still partial verification. The full architecture has not yet been exhau
 - Metadata audit events capture target kind/id, changed fields, before/after snapshots, and `manual_ui` provenance.
 - `src/lib/manualGraphEditing.ts` routes manual edge insertion through the same duplicate exact relationship invariant.
 - `scripts/validateExample.ts` includes validation for the second pass.
+
+### AI Chat Model UX / Diagnostics
+
+- `src/components/aiChat/AIChatConsole.tsx` uses a recommended model dropdown with an advanced custom model ID option.
+- The default AI chat model remains `gpt-5.5`.
+- The AI chat console can test the selected model through `/api/chat-with-files` without attachments, chat history, previous response ID, or EFlow context.
+- `api/chat-with-files.ts` keeps OpenAI calls in the backend route and returns structured safe errors for missing API key, invalid API key, invalid/unavailable model, and provider rejection cases.
+- Attachments and text-only chat remain on the existing multipart request path.
 
 ## Validation Status
 
