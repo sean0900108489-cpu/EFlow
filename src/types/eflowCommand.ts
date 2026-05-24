@@ -116,6 +116,7 @@ export interface EFlowEvidence {
 
 export const EFLOW_PROVENANCE_SOURCE_TYPES = [
   "user_input",
+  "raw_project_idea",
   "example_seed",
   "system_generated",
   "ai_suggested",

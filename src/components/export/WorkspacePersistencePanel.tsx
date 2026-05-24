@@ -9,6 +9,7 @@ import { makeWorkspaceFilename } from "../../lib/workspacePersistence";
 import {
   isEngineeringFlowInput,
   isFullAIContext,
+  normalizeEngineeringFlowInput,
   validateEFlowWorkspaceDocument,
 } from "../../lib/workspaceValidation";
 import { CopyJsonButton } from "./CopyJsonButton";
@@ -59,6 +60,17 @@ export function WorkspacePersistencePanel({
 
       const schemaVersion = parsedRecord.schemaVersion;
 
+      if ("EngineeringFlowInput" in parsedRecord) {
+        const normalized = normalizeEngineeringFlowInput(parsed);
+
+        onImportInput(normalized.EngineeringFlowInput);
+        setMessage({
+          type: "success",
+          text: t("workspacePersistence.status.inputImported"),
+        });
+        return;
+      }
+
       if (schemaVersion === "eflow-workspace/v0.3") {
         const workspaceValidation = validateEFlowWorkspaceDocument(parsed);
         if (!workspaceValidation.ok) {
@@ -103,7 +115,13 @@ export function WorkspacePersistencePanel({
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : t("workspacePersistence.error.invalidJson"),
+        text:
+          error instanceof Error &&
+          error.message === "EngineeringFlowInput JSON is missing required fields."
+            ? t("workspacePersistence.error.inputMissingFields")
+            : error instanceof Error
+              ? error.message
+              : t("workspacePersistence.error.invalidJson"),
       });
     }
   }

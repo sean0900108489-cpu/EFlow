@@ -9,6 +9,7 @@ import type { EFlowAuditEvent } from "./eflowAudit";
 
 export type SourceType =
   | "user_input"
+  | "raw_project_idea"
   | "example_seed"
   | "system_generated"
   | "ai_suggested"

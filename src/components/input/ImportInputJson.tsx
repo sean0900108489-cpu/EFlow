@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLanguage } from "../../lib/i18n/language-context";
-import { isEngineeringFlowInput } from "../../lib/workspaceValidation";
+import { normalizeEngineeringFlowInput } from "../../lib/workspaceValidation";
 import type { EngineeringFlowInput } from "../../types/engineeringFlow";
 
 type ImportInputJsonProps = {
@@ -14,22 +14,34 @@ export function ImportInputJson({ onImport }: ImportInputJsonProps) {
 
   function importJson() {
     try {
-      const parsed = JSON.parse(jsonText) as Partial<EngineeringFlowInput>;
+      const parsed = JSON.parse(jsonText) as unknown;
+      const candidate =
+        typeof parsed === "object" && parsed !== null && "EngineeringFlowInput" in parsed
+          ? (parsed as Record<string, unknown>).EngineeringFlowInput
+          : parsed;
 
-      if (!parsed || parsed.schemaVersion !== "engineering-flow-input/v0") {
+      if (
+        typeof candidate !== "object" ||
+        candidate === null ||
+        (candidate as Partial<EngineeringFlowInput>).schemaVersion !== "engineering-flow-input/v0"
+      ) {
         throw new Error(t("input.importJson.error.expectedSchema"));
       }
 
-      if (!isEngineeringFlowInput(parsed)) {
-        throw new Error(t("input.importJson.error.missingFields"));
-      }
+      const normalized = normalizeEngineeringFlowInput(parsed);
 
-      onImport(parsed as EngineeringFlowInput);
+      onImport(normalized.EngineeringFlowInput);
       setMessage({ type: "success", text: t("input.importJson.status.loaded") });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : t("input.importJson.error.couldNotImport"),
+        text:
+          error instanceof Error &&
+          error.message === "EngineeringFlowInput JSON is missing required fields."
+            ? t("input.importJson.error.missingFields")
+            : error instanceof Error
+              ? error.message
+              : t("input.importJson.error.couldNotImport"),
       });
     }
   }

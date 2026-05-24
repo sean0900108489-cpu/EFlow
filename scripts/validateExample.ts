@@ -37,6 +37,8 @@ import {
 import { buildWorkspaceDocument } from "../src/lib/workspacePersistence";
 import {
   isEFlowWorkspaceDocument,
+  isEngineeringFlowInput,
+  normalizeEngineeringFlowInput,
   validateEFlowWorkspaceDocument,
   validateEngineeringFlowGraph,
 } from "../src/lib/workspaceValidation";
@@ -643,6 +645,28 @@ assert.deepEqual(
   validateEFlowWorkspaceDocument(workspace),
   { ok: true, errors: [] },
   "workspace document should pass detailed workspace validation",
+);
+assert.deepEqual(
+  normalizeEngineeringFlowInput(todoThoughtUniverseExample),
+  { EngineeringFlowInput: todoThoughtUniverseExample },
+  "direct EngineeringFlowInput should normalize into the wrapper shape",
+);
+assert.deepEqual(
+  normalizeEngineeringFlowInput({ EngineeringFlowInput: todoThoughtUniverseExample }),
+  { EngineeringFlowInput: todoThoughtUniverseExample },
+  "wrapped EngineeringFlowInput should normalize into the wrapper shape",
+);
+assert.throws(
+  () => normalizeEngineeringFlowInput({ EngineeringFlowInput: { schemaVersion: "engineering-flow-input/v0" } }),
+  /missing required fields/,
+  "invalid wrapped EngineeringFlowInput should be rejected",
+);
+assert.ok(
+  isEngineeringFlowInput({
+    ...todoThoughtUniverseExample,
+    sourceType: "raw_project_idea",
+  }),
+  "raw project idea EngineeringFlowInput should validate",
 );
 const parsedWorkspace = JSON.parse(JSON.stringify(workspace)) as unknown;
 assert.ok(isEFlowWorkspaceDocument(parsedWorkspace), "parsed workspace document should validate");

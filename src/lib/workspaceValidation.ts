@@ -25,6 +25,7 @@ export type ValidationResult = {
 
 const sourceTypes: SourceType[] = [
   "user_input",
+  "raw_project_idea",
   "example_seed",
   "system_generated",
   "ai_suggested",
@@ -89,6 +90,19 @@ export function isEngineeringFlowInput(value: unknown): value is EngineeringFlow
     Array.isArray(value.aiRoles) &&
     Array.isArray(value.unknowns)
   );
+}
+
+export function normalizeEngineeringFlowInput(raw: unknown): {
+  EngineeringFlowInput: EngineeringFlowInput;
+} {
+  const candidate =
+    isRecord(raw) && "EngineeringFlowInput" in raw ? raw.EngineeringFlowInput : raw;
+
+  if (!isEngineeringFlowInput(candidate)) {
+    throw new Error("EngineeringFlowInput JSON is missing required fields.");
+  }
+
+  return { EngineeringFlowInput: candidate };
 }
 
 export function isEngineeringFlowGraph(value: unknown): value is EngineeringFlowGraph {
